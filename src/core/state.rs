@@ -1,6 +1,6 @@
 //! Input state management (fake events, sticky keys)
 
-use std::collections::HashSet;
+use std::collections::{HashSet, VecDeque};
 
 /// Fake event for simulating input
 #[derive(Debug, Clone)]

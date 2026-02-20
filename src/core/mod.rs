@@ -7,7 +7,7 @@ pub mod dpy_info;
 pub mod coord_mapping;
 pub mod state;
 
-pub use dpy_info::{DpyInfo, ShadowDisplay, ConnectionMode, DpmsStatus};
+pub use dpy_info::{DpyInfo, ShadowDisplay, ConnectionMode};
 pub use coord_mapping::{CoordinateMapping, LayoutMode, Direction};
 pub use state::{FakeEvent, FakeQueue, StickyKeys};
 

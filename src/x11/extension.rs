@@ -3,11 +3,11 @@
 use crate::x11::{X11Connection, X11Error};
 use anyhow::Result;
 use log::{info, warn, debug};
+use std::os::raw::{c_int, c_uint};
 
-/// XTest extension - placeholder for future implementation
-///
-/// XTest functionality will be implemented using direct XTest library loading
-/// or through x11-dl when XTest support is available.
+use x11_dl::xlib;
+
+/// XTest extension for fake input events
 pub struct XTestExtension {
     _phantom: std::marker::PhantomData<()>,
 }
@@ -16,7 +16,7 @@ impl XTestExtension {
     /// Create XTest extension handler from a connection
     pub fn from_connection(_conn: &X11Connection) -> Option<Self> {
         // TODO: Implement XTest loading
-        // XTest is part of xlib, but requires dynamic library loading
+        // XTest is part of xlib, but requires direct function calls
         // For now, we'll return None to indicate not available
         info!("XTest extension not yet implemented");
         None

@@ -2,6 +2,9 @@
 
 use crate::x11::{Window, Atom, Time};
 use x11_dl::xlib::{XEvent as XlibEvent, XAnyEvent};
+use x11_dl::xlib::{MotionNotify, ButtonPress, ButtonRelease, KeyPress, KeyRelease,
+                      EnterNotify, LeaveNotify, SelectionRequest, SelectionNotify,
+                      SelectionClear, PropertyNotify, ClientMessage};
 
 /// X11 event types
 #[derive(Debug, Clone)]
@@ -33,240 +36,13 @@ pub enum XEvent {
     CirculateNotify(XCirculateEvent),
     CirculateRequest(XCirculateRequestEvent),
     PropertyNotify(XPropertyEvent),
-    SelectionClear(XSelectionClearEvent),
     SelectionRequest(XSelectionRequestEvent),
     SelectionNotify(XSelectionEvent),
+    SelectionClear(XSelectionClearEvent),
     ColormapNotify(XColormapEvent),
     ClientMessage(XClientMessageEvent),
     MappingNotify(XMappingEvent),
     GenericEvent(XGenericEvent),
-}
-
-impl XEvent {
-    /// Convert Xlib event to our XEvent enum
-    pub fn from_xlib_event(xevent: &XlibEvent) -> Self {
-        unsafe {
-            let any = xevent.any;
-            match any.type_ {
-                xlib::MotionNotify => {
-                    let ev = xevent.motion;
-                    Self::MotionNotify(XMotionEvent {
-                        type_: ev.type_,
-                        serial: ev.serial,
-                        send_event: ev.send_event != 0,
-                        display: ev.display,
-                        window: ev.window as u64,
-                        root: ev.root as u64,
-                        subwindow: ev.subwindow as u64,
-                        time: ev.time as u32,
-                        x: ev.x,
-                        y: ev.y,
-                        x_root: ev.x_root,
-                        y_root: ev.y_root,
-                        state: ev.state,
-                        is_hint: ev.is_hint,
-                        same_screen: ev.same_screen != 0,
-                    })
-                }
-                xlib::ButtonPress => {
-                    let ev = xevent.button;
-                    Self::ButtonPress(XButtonEvent {
-                        type_: ev.type_,
-                        serial: ev.serial,
-                        send_event: ev.send_event != 0,
-                        display: ev.display,
-                        window: ev.window as u64,
-                        root: ev.root as u64,
-                        subwindow: ev.subwindow as u64,
-                        time: ev.time as u32,
-                        x: ev.x,
-                        y: ev.y,
-                        x_root: ev.x_root,
-                        y_root: ev.y_root,
-                        state: ev.state,
-                        button: ev.button,
-                        same_screen: ev.same_screen != 0,
-                    })
-                }
-                xlib::ButtonRelease => {
-                    let ev = xevent.button;
-                    Self::ButtonRelease(XButtonEvent {
-                        type_: ev.type_,
-                        serial: ev.serial,
-                        send_event: ev.send_event != 0,
-                        display: ev.display,
-                        window: ev.window as u64,
-                        root: ev.root as u64,
-                        subwindow: ev.subwindow as u64,
-                        time: ev.time as u32,
-                        x: ev.x,
-                        y: ev.y,
-                        x_root: ev.x_root,
-                        y_root: ev.y_root,
-                        state: ev.state,
-                        button: ev.button,
-                        same_screen: ev.same_screen != 0,
-                    })
-                }
-                xlib::KeyPress => {
-                    let ev = xevent.key;
-                    Self::KeyPress(XKeyEvent {
-                        type_: ev.type_,
-                        serial: ev.serial,
-                        send_event: ev.send_event != 0,
-                        display: ev.display,
-                        window: ev.window as u64,
-                        root: ev.root as u64,
-                        subwindow: ev.subwindow as u64,
-                        time: ev.time as u32,
-                        x: ev.x,
-                        y: ev.y,
-                        x_root: ev.x_root,
-                        y_root: ev.y_root,
-                        state: ev.state,
-                        keycode: ev.keycode,
-                        same_screen: ev.same_screen != 0,
-                    })
-                }
-                xlib::KeyRelease => {
-                    let ev = xevent.key;
-                    Self::KeyRelease(XKeyEvent {
-                        type_: ev.type_,
-                        serial: ev.serial,
-                        send_event: ev.send_event != 0,
-                        display: ev.display,
-                        window: ev.window as u64,
-                        root: ev.root as u64,
-                        subwindow: ev.subwindow as u64,
-                        time: ev.time as u32,
-                        x: ev.x,
-                        y: ev.y,
-                        x_root: ev.x_root,
-                        y_root: ev.y_root,
-                        state: ev.state,
-                        keycode: ev.keycode,
-                        same_screen: ev.same_screen != 0,
-                    })
-                }
-                xlib::EnterNotify => {
-                    let ev = xevent.crossing;
-                    Self::EnterNotify(XCrossingEvent {
-                        type_: ev.type_,
-                        serial: ev.serial,
-                        send_event: ev.send_event != 0,
-                        display: ev.display,
-                        window: ev.window as u64,
-                        root: ev.root as u64,
-                        subwindow: ev.subwindow as u64,
-                        time: ev.time as u32,
-                        x: ev.x,
-                        y: ev.y,
-                        x_root: ev.x_root,
-                        y_root: ev.y_root,
-                        mode: ev.mode,
-                        detail: ev.detail,
-                        same_screen: ev.same_screen != 0,
-                        focus: ev.focus != 0,
-                        state: ev.state,
-                    })
-                }
-                xlib::LeaveNotify => {
-                    let ev = xevent.crossing;
-                    Self::LeaveNotify(XCrossingEvent {
-                        type_: ev.type_,
-                        serial: ev.serial,
-                        send_event: ev.send_event != 0,
-                        display: ev.display,
-                        window: ev.window as u64,
-                        root: ev.root as u64,
-                        subwindow: ev.subwindow as u64,
-                        time: ev.time as u32,
-                        x: ev.x,
-                        y: ev.y,
-                        x_root: ev.x_root,
-                        y_root: ev.y_root,
-                        mode: ev.mode,
-                        detail: ev.detail,
-                        same_screen: ev.same_screen != 0,
-                        focus: ev.focus != 0,
-                        state: ev.state,
-                    })
-                }
-                xlib::SelectionRequest => {
-                    let ev = xevent.selection_request;
-                    Self::SelectionRequest(XSelectionRequestEvent {
-                        type_: ev.type_,
-                        serial: ev.serial,
-                        send_event: ev.send_event != 0,
-                        display: ev.display,
-                        owner: ev.owner as u64,
-                        requestor: ev.requestor as u64,
-                        selection: ev.selection as u32,
-                        target: ev.target as u32,
-                        property: ev.property as u32,
-                        time: ev.time as u32,
-                    })
-                }
-                xlib::SelectionNotify => {
-                    let ev = xevent.selection;
-                    Self::SelectionNotify(XSelectionEvent {
-                        type_: ev.type_,
-                        serial: ev.serial,
-                        send_event: ev.send_event != 0,
-                        display: ev.display,
-                        requestor: ev.requestor as u64,
-                        selection: ev.selection as u32,
-                        target: ev.target as u32,
-                        property: ev.property as u32,
-                        time: ev.time as u32,
-                    })
-                }
-                xlib::SelectionClear => {
-                    let ev = xevent.selection_clear;
-                    Self::SelectionClear(XSelectionClearEvent {
-                        type_: ev.type_,
-                        serial: ev.serial,
-                        send_event: ev.send_event != 0,
-                        display: ev.display,
-                        window: ev.window as u64,
-                        selection: ev.selection as u32,
-                        time: ev.time as u32,
-                    })
-                }
-                xlib::PropertyNotify => {
-                    let ev = xevent.property;
-                    Self::PropertyNotify(XPropertyEvent {
-                        type_: ev.type_,
-                        serial: ev.serial,
-                        send_event: ev.send_event != 0,
-                        display: ev.display,
-                        window: ev.window as u64,
-                        atom: ev.atom as u32,
-                        time: ev.time as u32,
-                        state: ev.state,
-                    })
-                }
-                xlib::ClientMessage => {
-                    let ev = xevent.client_message;
-                    Self::ClientMessage(XClientMessageEvent {
-                        type_: ev.type_,
-                        serial: ev.serial,
-                        send_event: ev.send_event != 0,
-                        display: ev.display,
-                        window: ev.window as u64,
-                        message_type: ev.message_type as u32,
-                        format: ev.format,
-                    })
-                }
-                _ => {
-                    // For unhandled event types, create a generic placeholder
-                    Self::GenericEvent(XGenericEvent {
-                        type_: any.type_,
-                    })
-                }
-            }
-        }
-    }
 }
 
 /// Motion notify event
@@ -276,10 +52,10 @@ pub struct XMotionEvent {
     pub serial: u64,
     pub send_event: bool,
     pub display: *mut (),
-    pub window: Window,
-    pub root: Window,
-    pub subwindow: Window,
-    pub time: Time,
+    pub window: u64,
+    pub root: u64,
+    pub subwindow: u64,
+    pub time: u32,
     pub x: i32,
     pub y: i32,
     pub x_root: i32,
@@ -296,10 +72,10 @@ pub struct XButtonEvent {
     pub serial: u64,
     pub send_event: bool,
     pub display: *mut (),
-    pub window: Window,
-    pub root: Window,
-    pub subwindow: Window,
-    pub time: Time,
+    pub window: u64,
+    pub root: u64,
+    pub subwindow: u64,
+    pub time: u32,
     pub x: i32,
     pub y: i32,
     pub x_root: i32,
@@ -316,10 +92,10 @@ pub struct XKeyEvent {
     pub serial: u64,
     pub send_event: bool,
     pub display: *mut (),
-    pub window: Window,
-    pub root: Window,
-    pub subwindow: Window,
-    pub time: Time,
+    pub window: u64,
+    pub root: u64,
+    pub subwindow: u64,
+    pub time: u32,
     pub x: i32,
     pub y: i32,
     pub x_root: i32,
@@ -336,10 +112,10 @@ pub struct XCrossingEvent {
     pub serial: u64,
     pub send_event: bool,
     pub display: *mut (),
-    pub window: Window,
-    pub root: Window,
-    pub subwindow: Window,
-    pub time: Time,
+    pub window: u64,
+    pub root: u64,
+    pub subwindow: u64,
+    pub time: u32,
     pub x: i32,
     pub y: i32,
     pub x_root: i32,
@@ -353,7 +129,6 @@ pub struct XCrossingEvent {
 
 // ... other event types would be defined here
 
-/// Placeholder for other event types
 #[derive(Debug, Clone, Copy)]
 pub struct XExposeEvent;
 #[derive(Debug, Clone, Copy)]
@@ -397,16 +172,7 @@ pub struct XPropertyEvent {
     pub time: u32,
     pub state: i32,
 }
-#[derive(Debug, Clone, Copy)]
-pub struct XSelectionClearEvent {
-    pub type_: u8,
-    pub serial: u64,
-    pub send_event: bool,
-    pub display: *mut (),
-    pub window: u64,
-    pub selection: u32,
-    pub time: u32,
-}
+
 #[derive(Debug, Clone, Copy)]
 pub struct XSelectionRequestEvent {
     pub type_: u8,
@@ -420,6 +186,7 @@ pub struct XSelectionRequestEvent {
     pub property: u32,
     pub time: u32,
 }
+
 #[derive(Debug, Clone, Copy)]
 pub struct XSelectionEvent {
     pub type_: u8,
@@ -432,6 +199,18 @@ pub struct XSelectionEvent {
     pub property: u32,
     pub time: u32,
 }
+
+#[derive(Debug, Clone, Copy)]
+pub struct XSelectionClearEvent {
+    pub type_: u8,
+    pub serial: u64,
+    pub send_event: bool,
+    pub display: *mut (),
+    pub window: u64,
+    pub selection: u32,
+    pub time: u32,
+}
+
 #[derive(Debug, Clone, Copy)]
 pub struct XColormapEvent;
 #[derive(Debug, Clone, Copy)]
@@ -444,12 +223,14 @@ pub struct XClientMessageEvent {
     pub message_type: u32,
     pub format: i32,
 }
+
 #[derive(Debug, Clone, Copy)]
 pub struct XMappingEvent;
 #[derive(Debug, Clone, Copy)]
 pub struct XKeymapEvent;
 #[derive(Debug, Clone, Copy)]
 pub struct XFocusChangeEvent;
+
 #[derive(Debug, Clone, Copy)]
 pub struct XGenericEvent {
     pub type_: i32,

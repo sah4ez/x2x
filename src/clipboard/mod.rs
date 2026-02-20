@@ -1,31 +1,31 @@
 //! Clipboard manager for inter-display sharing
 
-use crate::x11::{X11Connection, Window, Atom, Time, X11Error};
+use crate::x11::X11Connection;
 use anyhow::Result;
 
 pub mod x11_selection;
 
 /// Clipboard manager for inter-display sharing
 pub struct ClipboardManager {
-    from_clipboard: crate::clipboard::x11_selection::X11Clipboard,
-    to_clipboard: crate::clipboard::x11_selection::X11Clipboard,
+    from_clipboard: x11_selection::X11Clipboard,
+    to_clipboard: x11_selection::X11Clipboard,
 }
 
 impl ClipboardManager {
     pub fn new(from_conn: std::sync::Arc<X11Connection>, to_conn: std::sync::Arc<X11Connection>) -> Result<Self> {
         Ok(Self {
-            from_clipboard: crate::clipboard::x11_selection::X11Clipboard::new(from_conn)?,
-            to_clipboard: crate::clipboard::x11_selection::X11Clipboard::new(to_conn)?,
+            from_clipboard: x11_selection::X11Clipboard::new(from_conn)?,
+            to_clipboard: x11_selection::X11Clipboard::new(to_conn)?,
         })
     }
 
-    /// Handle a clipboard event from the "from" display
+    /// Handle a clipboard event from "from" display
     pub fn handle_from_event(&mut self, _event: &crate::x11::event::XEvent, _ctx: &mut crate::core::DpyInfo) -> Result<()> {
         // TODO: Implement clipboard event forwarding
         Ok(())
     }
 
-    /// Handle a clipboard event from the "to" display
+    /// Handle a clipboard event from "to" display
     pub fn handle_to_event(&mut self, _event: &crate::x11::event::XEvent, _ctx: &mut crate::core::DpyInfo) -> Result<()> {
         // TODO: Implement clipboard event forwarding
         Ok(())

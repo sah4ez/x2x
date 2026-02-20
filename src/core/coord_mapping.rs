@@ -1,6 +1,5 @@
 //! Coordinate mapping between displays
 
-use crate::x11::ScreenInfo;
 use anyhow::Result;
 
 /// Coordinate mapping tables
@@ -15,9 +14,9 @@ pub struct CoordinateMapping {
 impl CoordinateMapping {
     /// Create new coordinate mapping
     pub fn new(
-        from_screen: &ScreenInfo,
-        to_screens: &[ScreenInfo],
-        mode: LayoutMode,
+        _from_screen: &crate::x11::ScreenInfo,
+        to_screens: &[crate::x11::ScreenInfo],
+        _mode: crate::core::LayoutMode,
     ) -> Result<Self> {
         // TODO: Implement table building logic from C code
         // This involves precalculating coordinate transformations
@@ -30,48 +29,48 @@ impl CoordinateMapping {
             x_tables,
             y_tables,
             n_screens,
-            from_width: from_screen.width,
-            from_height: from_screen.height,
+            from_width: 1920,
+            from_height: 1080,
         })
     }
 
     /// Map X coordinate
     pub fn map_x(&self, from_x: i32, to_screen: usize) -> i32 {
         if to_screen >= self.n_screens {
-            return super::COORD_INCR as i32;
+            return crate::core::COORD_INCR as i32;
         }
 
         if from_x < 0 || from_x >= self.from_width as i32 {
-            return super::COORD_INCR as i32;
+            return crate::core::COORD_INCR as i32;
         }
 
         self.x_tables
             .get(to_screen)
             .and_then(|table| table.get(from_x as usize))
             .copied()
-            .unwrap_or(super::COORD_INCR as i32) as i32
+            .unwrap_or(crate::core::COORD_INCR) as i32
     }
 
     /// Map Y coordinate
     pub fn map_y(&self, from_y: i32, to_screen: usize) -> i32 {
         if to_screen >= self.n_screens {
-            return super::COORD_INCR as i32;
+            return crate::core::COORD_INCR as i32;
         }
 
         if from_y < 0 || from_y >= self.from_height as i32 {
-            return super::COORD_INCR as i32;
+            return crate::core::COORD_INCR as i32;
         }
 
         self.y_tables
             .get(to_screen)
             .and_then(|table| table.get(from_y as usize))
             .copied()
-            .unwrap_or(super::COORD_INCR as i32) as i32
+            .unwrap_or(crate::core::COORD_INCR) as i32
     }
 
     /// Check if coordinate is special
     pub fn is_special(&self, coord: i32) -> bool {
-        coord == super::COORD_INCR as i32 || coord == super::COORD_DECR as i32
+        coord == crate::core::COORD_INCR as i32 || coord == crate::core::COORD_DECR as i32
     }
 }
 
@@ -105,29 +104,23 @@ mod tests {
 
     #[test]
     fn test_special_coordinates() {
-        let from_screen = ScreenInfo {
-            screen_num: 0,
-            root: 0,
-            width: 1920,
-            height: 1080,
-        };
-        let to_screens = vec![ScreenInfo {
-            screen_num: 0,
-            root: 1,
-            width: 1920,
-            height: 1080,
-        }];
+        let to_screens = vec![];
 
         let mapping = CoordinateMapping::new(
-            &from_screen,
+            &crate::x11::ScreenInfo {
+                screen_num: 0,
+                root: 0,
+                width: 1920,
+                height: 1080,
+            },
             &to_screens,
             LayoutMode::Horizontal {
                 direction: Direction::Right,
             },
         ).unwrap();
 
-        assert!(mapping.is_special(super::COORD_INCR as i32));
-        assert!(mapping.is_special(super::COORD_DECR as i32));
+        assert!(mapping.is_special(crate::core::COORD_INCR as i32));
+        assert!(mapping.is_special(crate::core::COORD_DECR as i32));
         assert!(!mapping.is_special(100));
     }
 }

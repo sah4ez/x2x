@@ -40,9 +40,9 @@ impl FakeManager {
 
     /// Process all queued fake events
     pub fn process_queue(&mut self) -> Result<()> {
-        let mut queue = std::mem::take(&mut self.queue);
-        queue.process_all(|event| self.process_single_event(event))?;
-        self.queue = queue;
+        while let Some(event) = self.queue.pop() {
+            self.process_single_event(&event)?;
+        }
         Ok(())
     }
 
@@ -92,7 +92,7 @@ mod tests {
     #[test]
     fn test_fake_manager() {
         // This is a stub test - real tests would require a mock X11 connection
-        // For now, just verify to API compiles
+        // For now, just verify that the API compiles
         assert!(true);
     }
 }

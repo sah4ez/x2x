@@ -9,7 +9,7 @@ pub mod fake;
 
 pub use mouse::MouseHandler;
 pub use keyboard::KeyboardHandler;
-pub use fake::{FakeEvent, FakeQueue};
+pub use fake::FakeEvent;
 
 use crate::x11::event::XEvent;
 use crate::core::DpyInfo;
