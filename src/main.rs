@@ -29,12 +29,13 @@ mod win32;
 
 use anyhow::{Context, Result};
 use clap::Parser;
-use log::{debug, error, info};
+use log::{debug, error, info, warn};
 
 use utils::config::Config;
+use x11::X11Connection;
+use core::DpyInfo;
 
-#[tokio::main]
-async fn main() -> Result<()> {
+fn main() -> Result<()> {
     // Initialize logger
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info"))
         .init();
@@ -46,13 +47,44 @@ async fn main() -> Result<()> {
 
     info!("Starting x2x-rust...");
 
-    // TODO: Implement main logic
-    // 1. Open X11 connections
-    // 2. Initialize DpyInfo
-    // 3. Register event handlers
-    // 4. Run event loop
+    // Open X11 connections
+    let from_display_name = config.from_display_name().unwrap_or(":0");
+    let to_display_name = config.to_display_name();
 
-    error!("Not yet implemented - see RUST_REFACTOR_PLAN.md for implementation plan");
+    info!("Opening connections: {} -> {}", from_display_name, to_display_name);
+
+    let from_conn = X11Connection::open(Some(from_display_name))
+        .with_context(|| format!("Failed to open display: {}", from_display_name))?;
+
+    let to_conn = X11Connection::open(Some(to_display_name))
+        .with_context(|| format!("Failed to open display: {}", to_display_name))?;
+
+    info!("X11 connections opened successfully");
+
+    // Check XTest extension on target display
+    if !to_conn.has_xtest() {
+        warn!("XTest extension not available on target display");
+        warn!("Input simulation may not work");
+    }
+
+    // Initialize display info
+    let from_screen_info = from_conn.current_screen_info()?;
+    let to_screen_info = to_conn.current_screen_info()?;
+
+    info!("From display: {}x{}", from_screen_info.width, from_screen_info.height);
+    info!("To display: {}x{}", to_screen_info.width, to_screen_info.height);
+
+    // Create DpyInfo
+    let from_conn_arc = std::sync::Arc::new(from_conn);
+    let to_conn_arc = std::sync::Arc::new(to_conn);
+
+    let mut dpy_info = DpyInfo::new(from_conn_arc, to_conn_arc)?;
+
+    info!("Display info initialized");
+
+    // TODO: Run event loop
+    // For now, just demonstrate that everything compiles
+    info!("Event loop not yet implemented - see RUST_REFACTOR_PLAN.md");
 
     Ok(())
 }

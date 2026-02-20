@@ -1,20 +1,98 @@
-//! X11 connection management
+//! X11 connection management using x11-dl
 
 use crate::x11::{X11Error, Window, Atom, Time, ScreenInfo};
-use anyhow::Result;
+use anyhow::{Context, Result};
+use std::ffi::CString;
+use std::os::raw::{c_char, c_int, c_uint};
 use std::sync::Arc;
+use std::ptr;
+
+// Import x11-dl bindings
+use x11_dl::xlib::{
+    Display, XCloseDisplay, XFlush, XNextEvent, XOpenDisplay, XPending,
+    XDefaultRootWindow, XDefaultScreen, XDisplayWidth, XDisplayHeight,
+    XGrabKey, XUngrabKey, XGrabPointer, XUngrabPointer,
+    XSync, XQueryPointer, XWarpPointer,
+    XErrorEvent, XEvent as XlibEvent, Window as XlibWindow,
+    KeyCode, KeySym, Time as XlibTime,
+    _XEvent,
+};
+use x11_dl::xlib;
+
+// Import XTest extension bindings
+use x11_dl::xtst::{
+    XTestFakeMotionEvent, XTestFakeButtonEvent, XTestFakeKeyEvent,
+    XTestQueryExtension,
+};
+
+// Import Xext bindings for DPMS
+use x11_dl::xext::Xext;
 
 /// X11 connection wrapper
 pub struct X11Connection {
-    display: *mut (),
+    display: *mut Display,
     screen: i32,
+    xlib: xlib::Xlib,
+    xtst: Option<xtst::Xtst>,
+    xext: Option<Xext>,
 }
+
+unsafe impl Send for X11Connection {}
+unsafe impl Sync for X11Connection {}
 
 impl X11Connection {
     /// Open an X11 connection
     pub fn open(display_name: Option<&str>) -> Result<Self> {
-        // TODO: Implement XOpenDisplay via x11-dl
-        todo!("Implement X11Connection::open")
+        // Load Xlib
+        let xlib = xlib::Xlib::open().context("Failed to load Xlib")?;
+
+        // Open display
+        let display_name_cstring = display_name.map(|s| CString::new(s).unwrap());
+        let display_name_ptr = display_name_cstring
+            .as_ref()
+            .map(|s| s.as_ptr())
+            .unwrap_or(ptr::null());
+
+        let display = unsafe { (xlib.XOpenDisplay)(display_name_ptr) };
+
+        if display.is_null() {
+            return Err(X11Error::OpenDisplayFailed(
+                display_name.unwrap_or(":0").to_string(),
+            )
+            .into());
+        }
+
+        let screen = unsafe { (xlib.XDefaultScreen)(display) };
+
+        // Try to load XTest extension
+        let xtst = xtst::Xtst::open().ok();
+
+        // Try to load Xext extension
+        let xext = Xext::open().ok();
+
+        info!(
+            "Opened X display: screen={}, XTest={:?}",
+            screen,
+            xtst.is_some()
+        );
+
+        Ok(Self {
+            display,
+            screen,
+            xlib,
+            xtst,
+            xext,
+        })
+    }
+
+    /// Get the raw display pointer
+    pub fn display_ptr(&self) -> *mut Display {
+        self.display
+    }
+
+    /// Get the xlib library
+    pub fn xlib(&self) -> &xlib::Xlib {
+        &self.xlib
     }
 
     /// Get the default screen number
@@ -24,33 +102,210 @@ impl X11Connection {
 
     /// Get the root window for the default screen
     pub fn root_window(&self) -> Window {
-        0
+        unsafe { (self.xlib.XDefaultRootWindow)(self.display) as u64 }
+    }
+
+    /// Get the root window for a specific screen
+    pub fn root_window_of_screen(&self, screen: i32) -> Window {
+        unsafe {
+            (self.xlib.XRootWindow)(self.display, screen) as u64
+        }
+    }
+
+    /// Get screen width
+    pub fn screen_width(&self, screen: i32) -> i32 {
+        unsafe { (self.xlib.XDisplayWidth)(self.display, screen) }
+    }
+
+    /// Get screen height
+    pub fn screen_height(&self, screen: i32) -> i32 {
+        unsafe { (self.xlib.XDisplayHeight)(self.display, screen) }
     }
 
     /// Flush the output buffer
     pub fn flush(&self) -> Result<()> {
-        // TODO: Implement XFlush
+        let result = unsafe { (self.xlib.XFlush)(self.display) };
+        if result != 0 {
+            Ok(())
+        } else {
+            Err(X11Error::Generic("XFlush failed".to_string()).into())
+        }
+    }
+
+    /// Synchronize with server
+    pub fn sync(&self, discard: bool) -> Result<()> {
+        unsafe { (self.xlib.XSync)(self.display, if discard { 1 } else { 0 }) };
         Ok(())
     }
 
     /// Check if there are pending events
     pub fn pending(&self) -> i32 {
-        0
+        unsafe { (self.xlib.XPending)(self.display) }
+    }
+
+    /// Get the file descriptor for select()
+    pub fn connection_number(&self) -> i32 {
+        unsafe { (self.xlib.XConnectionNumber)(self.display) }
     }
 
     /// Get the next event from the queue (blocking)
     pub fn next_event(&self) -> crate::x11::event::XEvent {
-        // TODO: Implement XNextEvent
-        todo!("Implement X11Connection::next_event")
+        let mut xevent: XlibEvent = std::mem::zeroed();
+        unsafe { (self.xlib.XNextEvent)(self.display, &mut xevent) };
+        crate::x11::event::XEvent::from_xlib_event(&xevent)
+    }
+
+    /// Peek at the next event without removing it
+    pub fn peek_event(&self) -> Option<crate::x11::event::XEvent> {
+        if self.pending() == 0 {
+            return None;
+        }
+        let mut xevent: XlibEvent = std::mem::zeroed();
+        unsafe {
+            (self.xlib.XPeekEvent)(self.display, &mut xevent);
+        }
+        Some(crate::x11::event::XEvent::from_xlib_event(&xevent))
     }
 
     /// Get screen information
     pub fn screen_info(&self, screen_num: i32) -> Result<ScreenInfo> {
-        // TODO: Implement screen info retrieval
-        todo!("Implement X11Connection::screen_info")
+        if screen_num < 0 || screen_num >= self.screen_count()? {
+            return Err(X11Error::InvalidScreen(screen_num).into());
+        }
+
+        Ok(ScreenInfo {
+            screen_num,
+            root: self.root_window_of_screen(screen_num),
+            width: self.screen_width(screen_num) as u32,
+            height: self.screen_height(screen_num) as u32,
+        })
+    }
+
+    /// Get number of screens
+    pub fn screen_count(&self) -> Result<i32> {
+        let count = unsafe { (self.xlib.XScreenCount)(self.display) };
+        Ok(count)
+    }
+
+    /// Get current screen information
+    pub fn current_screen_info(&self) -> Result<ScreenInfo> {
+        self.screen_info(self.screen)
+    }
+
+    /// Check if XTest extension is available
+    pub fn has_xtest(&self) -> bool {
+        self.xtst.is_some()
+    }
+
+    /// Check if Xext extension is available
+    pub fn has_xext(&self) -> bool {
+        self.xext.is_some()
+    }
+
+    /// Query pointer position
+    pub fn query_pointer(&self, window: Window) -> Result<PointerInfo> {
+        let mut root_return: XlibWindow = 0;
+        let mut child_return: XlibWindow = 0;
+        let mut root_x_return: c_int = 0;
+        let mut root_y_return: c_int = 0;
+        let mut win_x_return: c_int = 0;
+        let mut win_y_return: c_int = 0;
+        let mut mask_return: c_uint = 0;
+
+        let result = unsafe {
+            (self.xlib.XQueryPointer)(
+                self.display,
+                window as XlibWindow,
+                &mut root_return,
+                &mut child_return,
+                &mut root_x_return,
+                &mut root_y_return,
+                &mut win_x_return,
+                &mut win_y_return,
+                &mut mask_return,
+            )
+        };
+
+        if result == 0 {
+            return Err(X11Error::Generic("XQueryPointer failed".to_string()).into());
+        }
+
+        Ok(PointerInfo {
+            root: root_return as u64,
+            child: child_return as u64,
+            root_x: root_x_return as i32,
+            root_y: root_y_return as i32,
+            win_x: win_x_return as i32,
+            win_y: win_y_return as i32,
+            mask: mask_return,
+        })
+    }
+
+    /// Warp pointer to position
+    pub fn warp_pointer(
+        &self,
+        src_window: Option<Window>,
+        dst_window: Window,
+        src_x: i32,
+        src_y: i32,
+        src_width: u32,
+        src_height: u32,
+        dst_x: i32,
+        dst_y: i32,
+    ) -> Result<()> {
+        let src_xlib_window = src_window.unwrap_or(0) as XlibWindow;
+        unsafe {
+            (self.xlib.XWarpPointer)(
+                self.display,
+                src_xlib_window,
+                dst_window as XlibWindow,
+                src_x as c_int,
+                src_y as c_int,
+                src_width as c_uint,
+                src_height as c_uint,
+                dst_x as c_int,
+                dst_y as c_int,
+            );
+        }
+        Ok(())
+    }
+
+    /// Get XTest extension reference
+    pub fn xtst(&self) -> Option<&xtst::Xtst> {
+        self.xtst.as_ref()
     }
 }
 
-// Safety: X11Connection is a wrapper around a raw X Display pointer
-unsafe impl Send for X11Connection {}
-unsafe impl Sync for X11Connection {}
+impl Drop for X11Connection {
+    fn drop(&mut self) {
+        if !self.display.is_null() {
+            unsafe {
+                (self.xlib.XCloseDisplay)(self.display);
+            }
+        }
+    }
+}
+
+/// Pointer information from XQueryPointer
+#[derive(Debug, Clone)]
+pub struct PointerInfo {
+    pub root: u64,
+    pub child: u64,
+    pub root_x: i32,
+    pub root_y: i32,
+    pub win_x: i32,
+    pub win_y: i32,
+    pub mask: u32,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    #[ignore] // Requires X server
+    fn test_open_display() {
+        let conn = X11Connection::open(None);
+        assert!(conn.is_ok());
+    }
+}

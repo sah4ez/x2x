@@ -666,73 +666,9 @@ pub enum EdgeDirection {
 
 ---
 
-### Фаза 9: Win32 Support (опционально, 3-4 дня)
+### Фаза 9: Тестирование и отладка (4-5 дней)
 
-#### 9.1 Windows интеграция
-
-**Задачи:**
-- Перенести `keymap.c` логику в Rust
-- Обработка Windows сообщений через `windows` crate
-- Clipboard интеграция
-
-```rust
-// src/win32/keymap.rs
-use windows::Win32::UI::Input::KeyboardAndMouse::*;
-
-pub struct Win32KeyMap {
-    mappings: HashMap<VIRTUAL_KEY, Vec<KeySym>>,
-}
-
-impl Win32KeyMap {
-    pub fn new() -> Self {
-        // Построение таблицы из C кода
-        Self {
-            mappings: Self::build_keymap_table(),
-        }
-    }
-
-    pub fn map_virtual_key(
-        &self,
-        vk: VIRTUAL_KEY,
-        key_data: u32,
-    ) -> KeyAction {
-        // Логика из PCtoX
-    }
-}
-
-pub struct KeyAction {
-    pub keysyms: Vec<KeySym>,
-    pub release_modifiers: ModifierFlags,
-}
-```
-
-```rust
-// src/win32/window.rs
-use windows::Win32::UI::WindowsAndMessaging::*;
-
-pub struct Win32Window {
-    hwnd: HWND,
-    edge_wnd: HWND,
-    big_wnd: HWND,
-}
-
-impl Win32Window {
-    pub fn create(&mut self) -> Result<(), Win32Error> {
-        // Создание edge окна
-        // Создание big окна для статуса
-    }
-
-    pub fn process_messages(&mut self) -> Result<bool, Win32Error> {
-        // GetMessage / DispatchMessage loop
-    }
-}
-```
-
----
-
-### Фаза 10: Тестирование и отладка (4-5 дней)
-
-#### 10.1 Unit тесты
+#### 9.1 Unit тесты
 
 ```rust
 #[cfg(test)]
@@ -765,7 +701,7 @@ mod tests {
 }
 ```
 
-#### 10.2 Integration тесты
+#### 9.2 Integration тесты
 
 ```rust
 #[cfg(test)]
@@ -781,28 +717,28 @@ mod integration_tests {
 }
 ```
 
-#### 10.3 Property-based testing (опционально)
+#### 9.3 Property-based testing (опционально)
 
 Использовать `proptest` для тестирования координатных трансформаций.
 
 ---
 
-### Фаза 11: Документация и полировка (2-3 дня)
+### Фаза 10: Документация и полировка (2-3 дня)
 
-#### 11.1 Документация
+#### 10.1 Документация
 
 - Rustdoc для всех public API
 - README с инструкциями по сборке
 - Примеры использования
 - Перенести docs/ в Markdown
 
-#### 11.2 Оптимизации
+#### 10.2 Оптимизации
 
 - Профилирование с `perf` / `flamegraph`
 - Оптимизация hot paths (coordinate mapping)
 - Уменьшение аллокаций
 
-#### 11.3 CI/CD
+#### 10.3 CI/CD
 
 ```yaml
 # .github/workflows/test.yml
@@ -839,11 +775,9 @@ jobs:
 | 6. Clipboard Sharing | 3-4 дня | Фаза 2, 3 |
 | 7. Connection Management | 2-3 дня | Фаза 3, 4 |
 | 8. CLI и конфигурация | 1-2 дня | Фаза 1 |
-| 9. Win32 Support | 3-4 дня | Фаза 2, 5, 8 |
-| 10. Тестирование | 4-5 дней | Фазы 1-9 |
-| 11. Документация | 2-3 дня | Все фазы |
-| **Итого (без Win32)** | **24-31 день** | |
-| **Итого (с Win32)** | **27-35 дней** | |
+| 9. Тестирование | 4-5 дней | Фазы 1-9 |
+| 10. Документация | 2-3 дня | Все фазы |
+| **Итого** | **24-31 день** | |
 
 ---
 
@@ -951,7 +885,6 @@ jobs:
 4. Фаза 10 (Comprehensive testing)
 
 **Опционально:**
-1. Фаза 9 (Win32 support)
 2. Additional features (multi-display enhancements, etc.)
 
 ---
