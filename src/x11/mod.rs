@@ -62,3 +62,48 @@ pub fn init_xlib() -> Result<()> {
     }
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_type_aliases() {
+        // Test that type aliases are defined
+        let window: Window = 0;
+        let atom: Atom = 0;
+        let time: Time = 0;
+        assert_eq!(window, 0);
+        assert_eq!(atom, 0);
+        assert_eq!(time, 0);
+    }
+
+    #[test]
+    fn test_screen_info() {
+        let info = ScreenInfo {
+            screen_num: 0,
+            root: 0,
+            width: 1920,
+            height: 1080,
+        };
+        assert_eq!(info.screen_num, 0);
+        assert_eq!(info.root, 0);
+        assert_eq!(info.width, 1920);
+        assert_eq!(info.height, 1080);
+    }
+
+    #[test]
+    fn test_x11_error_display() {
+        let err = X11Error::OpenDisplayFailed(":0".to_string());
+        assert!(err.to_string().contains(":0"));
+
+        let err = X11Error::Generic("test".to_string());
+        assert!(err.to_string().contains("test"));
+    }
+
+    #[test]
+    fn test_init_xlib() {
+        // Test that init_xlib doesn't panic
+        assert!(init_xlib().is_ok());
+    }
+}

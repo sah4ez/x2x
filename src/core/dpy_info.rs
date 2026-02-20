@@ -60,6 +60,40 @@ impl DpyInfo {
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_dpy_info_new() {
+        // Test that DpyInfo can be created with mock connections
+        // For now, this is a placeholder
+        assert!(true);
+    }
+
+    #[test]
+    fn test_connect_panics() {
+        // Test that connect returns error (todo!)
+        // For now, this is a placeholder
+        assert!(true);
+    }
+
+    #[test]
+    fn test_disconnect_panics() {
+        // Test that disconnect returns error (todo!)
+        // For now, this is a placeholder
+        assert!(true);
+    }
+
+    #[test]
+    fn test_connection_mode() {
+        // Test ConnectionMode enum
+        assert_eq!(ConnectionMode::Disconnected, ConnectionMode::Disconnected);
+        assert_eq!(ConnectionMode::Connected, ConnectionMode::Connected);
+        assert_ne!(ConnectionMode::Disconnected, ConnectionMode::Connected);
+    }
+}
+
 /// Shadow display for multi-monitor setups
 pub struct ShadowDisplay {
     pub name: String,

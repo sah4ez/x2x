@@ -123,4 +123,92 @@ mod tests {
         assert!(mapping.is_special(crate::core::COORD_DECR as i32));
         assert!(!mapping.is_special(100));
     }
+
+    #[test]
+    fn test_new_with_empty_screens() {
+        let to_screens = vec![];
+
+        let mapping = CoordinateMapping::new(
+            &crate::x11::ScreenInfo {
+                screen_num: 0,
+                root: 0,
+                width: 1920,
+                height: 1080,
+            },
+            &to_screens,
+            crate::core::LayoutMode::Horizontal {
+                direction: crate::core::Direction::Right,
+            },
+        ).unwrap();
+
+        assert_eq!(mapping.n_screens, 0);
+    }
+
+    #[test]
+    fn test_map_x_out_of_bounds() {
+        let to_screens = vec![];
+
+        let mapping = CoordinateMapping::new(
+            &crate::x11::ScreenInfo {
+                screen_num: 0,
+                root: 0,
+                width: 1920,
+                height: 1080,
+            },
+            &to_screens,
+            crate::core::LayoutMode::Horizontal {
+                direction: crate::core::Direction::Right,
+            },
+        ).unwrap();
+
+        // Test out-of-bounds coordinates
+        let result = mapping.map_x(-1, 0);
+        assert_eq!(result, crate::core::COORD_INCR as i32);
+
+        let result = mapping.map_x(1920, 0);
+        assert_eq!(result, crate::core::COORD_INCR as i32);
+    }
+
+    #[test]
+    fn test_map_y_out_of_bounds() {
+        let to_screens = vec![];
+
+        let mapping = CoordinateMapping::new(
+            &crate::x11::ScreenInfo {
+                screen_num: 0,
+                root: 0,
+                width: 1920,
+                height: 1080,
+            },
+            &to_screens,
+            crate::core::LayoutMode::Horizontal {
+                direction: crate::core::Direction::Right,
+            },
+        ).unwrap();
+
+        // Test out-of-bounds coordinates
+        let result = mapping.map_y(-1, 0);
+        assert_eq!(result, crate::core::COORD_INCR as i32);
+
+        let result = mapping.map_y(1080, 0);
+        assert_eq!(result, crate::core::COORD_INCR as i32);
+    }
+
+    #[test]
+    fn test_layout_mode_variants() {
+        // Test LayoutMode enum
+        let horizontal = crate::core::LayoutMode::Horizontal {
+            direction: crate::core::Direction::Right,
+        };
+        assert_eq!(horizontal, crate::core::LayoutMode::Horizontal {
+            direction: crate::core::Direction::Right,
+        });
+
+        let vertical = crate::core::LayoutMode::Vertical {
+            direction: crate::core::Direction::Up,
+        };
+        assert_eq!(vertical, crate::core::LayoutMode::Vertical {
+            direction: crate::core::Direction::Up,
+        });
+    }
 }

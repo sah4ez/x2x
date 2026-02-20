@@ -5,6 +5,9 @@ use anyhow::Result;
 
 pub mod x11_selection;
 
+#[cfg(test)]
+mod tests;
+
 /// Clipboard manager for inter-display sharing
 pub struct ClipboardManager {
     from_clipboard: x11_selection::X11Clipboard,

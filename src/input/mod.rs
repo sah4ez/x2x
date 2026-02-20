@@ -25,3 +25,6 @@ pub trait InputHandler {
     /// Ok(false) if the event was not handled.
     fn handle(&self, event: &XEvent, ctx: &mut DpyInfo) -> Result<bool>;
 }
+
+#[cfg(test)]
+mod tests;

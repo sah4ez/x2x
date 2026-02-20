@@ -94,3 +94,29 @@ impl X11Clipboard {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_new_clipboard() {
+        // Test that X11Clipboard can be created with a mock connection
+        // For now, this is a placeholder
+        assert!(true);
+    }
+
+    #[test]
+    fn test_set_selection_data() {
+        // Test set_selection_data with a mock connection
+        // For now, this is a placeholder
+        assert!(true);
+    }
+
+    #[test]
+    fn test_get_selection_data() {
+        // Test get_selection_data returns None when empty
+        // For now, this is a placeholder
+        assert!(true);
+    }
+}

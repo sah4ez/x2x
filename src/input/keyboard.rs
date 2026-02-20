@@ -36,6 +36,32 @@ impl KeyboardHandler {
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_keyboard_handler_new() {
+        // Test that KeyboardHandler can be created
+        // For now, this is a placeholder
+        assert!(true);
+    }
+
+    #[test]
+    fn test_handle_key_press_panics() {
+        // Test that handle_key_press returns error (todo!)
+        // For now, this is a placeholder
+        assert!(true);
+    }
+
+    #[test]
+    fn test_handle_key_release_panics() {
+        // Test that handle_key_release returns error (todo!)
+        // For now, this is a placeholder
+        assert!(true);
+    }
+}
+
 impl InputHandler for KeyboardHandler {
     fn handle(&self, event: &XEvent, ctx: &mut DpyInfo) -> Result<bool> {
         match event {

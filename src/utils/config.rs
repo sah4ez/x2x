@@ -120,6 +120,7 @@ mod tests {
         assert_eq!(config.to_display, "localhost:1");
         assert!(!config.wait);
         assert!(!config.vertical);
+        assert!(!config.debug);
     }
 
     #[test]
@@ -128,5 +129,24 @@ mod tests {
         assert_eq!(EdgeDirection::West.to_direction(), crate::core::Direction::Left);
         assert_eq!(EdgeDirection::North.to_direction(), crate::core::Direction::Up);
         assert_eq!(EdgeDirection::South.to_direction(), crate::core::Direction::Down);
+    }
+
+    #[test]
+    fn test_edge_direction_equality() {
+        assert_eq!(EdgeDirection::East, EdgeDirection::East);
+        assert_eq!(EdgeDirection::West, EdgeDirection::West);
+        assert_ne!(EdgeDirection::North, EdgeDirection::South);
+    }
+
+    #[test]
+    fn test_log_level() {
+        let config = Config::default();
+        assert_eq!(config.log_level(), "info");
+
+        let config_debug = Config {
+            debug: true,
+            ..Config::default()
+        };
+        assert_eq!(config_debug.log_level(), "debug");
     }
 }

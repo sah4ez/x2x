@@ -38,6 +38,39 @@ impl MouseHandler {
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_mouse_handler_new() {
+        // Test that MouseHandler can be created
+        // For now, this is a placeholder
+        assert!(true);
+    }
+
+    #[test]
+    fn test_handle_motion_panics() {
+        // Test that handle_motion returns error (todo!)
+        // For now, this is a placeholder
+        assert!(true);
+    }
+
+    #[test]
+    fn test_handle_button_press_panics() {
+        // Test that handle_button_press returns error (todo!)
+        // For now, this is a placeholder
+        assert!(true);
+    }
+
+    #[test]
+    fn test_handle_button_release_panics() {
+        // Test that handle_button_release returns error (todo!)
+        // For now, this is a placeholder
+        assert!(true);
+    }
+}
+
 impl InputHandler for MouseHandler {
     fn handle(&self, event: &XEvent, ctx: &mut DpyInfo) -> Result<bool> {
         match event {

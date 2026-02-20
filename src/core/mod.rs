@@ -28,3 +28,34 @@ pub const fn is_special_coord(coord: i16) -> bool {
 pub const fn special_coord(coord: i16) -> i16 {
     if is_special_coord(coord) { coord } else { 0 }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_constants() {
+        assert_eq!(N_BUTTONS, 20);
+        assert_eq!(MAX_BUTTON_MAP_EVENTS, 20);
+        assert_eq!(COORD_INCR, -1);
+        assert_eq!(COORD_DECR, -2);
+    }
+
+    #[test]
+    fn test_is_special_coord() {
+        assert!(is_special_coord(COORD_INCR));
+        assert!(is_special_coord(COORD_DECR));
+        assert!(is_special_coord(-5));
+        assert!(!is_special_coord(0));
+        assert!(!is_special_coord(100));
+    }
+
+    #[test]
+    fn test_special_coord() {
+        assert_eq!(special_coord(COORD_INCR), COORD_INCR);
+        assert_eq!(special_coord(COORD_DECR), COORD_DECR);
+        assert_eq!(special_coord(-5), -5);
+        assert_eq!(special_coord(0), 0);
+        assert_eq!(special_coord(100), 0);
+    }
+}
