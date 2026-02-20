@@ -1,5 +1,7 @@
 //! Keyboard input handling
 
+use log::{info, warn, debug};
+
 use crate::x11::event::{XEvent, XKeyEvent};
 use crate::x11::X11Connection;
 use crate::core::DpyInfo;
@@ -22,23 +24,14 @@ impl KeyboardHandler {
     }
 
     /// Handle a key press event
-    fn handle_key_press(&self, event: &XKeyEvent, ctx: &mut DpyInfo) -> Result<bool> {
-        // TODO: Implement ProcessKeyEvent logic for press:
-        // 1. Get KeySym from KeyCode using XLookupKeysym
-        // 2. Check for sticky keys
-        // 3. Check modifier keys
-        // 4. Fake key press on to display
-        // 5. Track in fake queue
+    fn handle_key_press(&self, _event: &XKeyEvent, _ctx: &mut DpyInfo) -> Result<bool> {
+        // TODO: Implement ProcessKeyEvent logic for press
         todo!("Implement KeyboardHandler::handle_key_press")
     }
 
     /// Handle a key release event
-    fn handle_key_release(&self, event: &XKeyEvent, ctx: &mut DpyInfo) -> Result<bool> {
-        // TODO: Implement ProcessKeyEvent logic for release:
-        // 1. Get KeySym from KeyCode
-        // 2. Check sticky keys
-        // 3. Fake key release on to display
-        // 4. Update fake queue
+    fn handle_key_release(&self, _event: &XKeyEvent, _ctx: &mut DpyInfo) -> Result<bool> {
+        // TODO: Implement ProcessKeyEvent logic for release
         todo!("Implement KeyboardHandler::handle_key_release")
     }
 }

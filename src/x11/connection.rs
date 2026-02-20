@@ -1,5 +1,7 @@
 //! X11 connection management using x11-dl
 
+use log::{info, warn, debug};
+
 use crate::x11::{X11Error, Window, Atom, Time, ScreenInfo};
 use anyhow::{Context, Result};
 use std::ffi::CString;
@@ -7,34 +9,14 @@ use std::os::raw::{c_char, c_int, c_uint};
 use std::sync::Arc;
 use std::ptr;
 
-// Import x11-dl bindings
-use x11_dl::xlib::{
-    Display, XCloseDisplay, XFlush, XNextEvent, XOpenDisplay, XPending,
-    XDefaultRootWindow, XDefaultScreen, XDisplayWidth, XDisplayHeight,
-    XGrabKey, XUngrabKey, XGrabPointer, XUngrabPointer,
-    XSync, XQueryPointer, XWarpPointer,
-    XErrorEvent, XEvent as XlibEvent, Window as XlibWindow,
-    KeyCode, KeySym, Time as XlibTime,
-    _XEvent,
-};
-use x11_dl::xlib;
-
-// Import XTest extension bindings
-use x11_dl::xtst::{
-    XTestFakeMotionEvent, XTestFakeButtonEvent, XTestFakeKeyEvent,
-    XTestQueryExtension,
-};
-
-// Import Xext bindings for DPMS
-use x11_dl::xext::Xext;
+// Import x11-dl library
+use x11_dl::xlib::{Display, XEvent as XlibEvent, Window as XlibWindow};
 
 /// X11 connection wrapper
 pub struct X11Connection {
     display: *mut Display,
     screen: i32,
-    xlib: xlib::Xlib,
-    xtst: Option<xtst::Xtst>,
-    xext: Option<Xext>,
+    xlib: x11_dl::xlib::Xlib,
 }
 
 unsafe impl Send for X11Connection {}
@@ -44,7 +26,7 @@ impl X11Connection {
     /// Open an X11 connection
     pub fn open(display_name: Option<&str>) -> Result<Self> {
         // Load Xlib
-        let xlib = xlib::Xlib::open().context("Failed to load Xlib")?;
+        let xlib = x11_dl::xlib::Xlib::open().context("Failed to load Xlib")?;
 
         // Open display
         let display_name_cstring = display_name.map(|s| CString::new(s).unwrap());
@@ -64,24 +46,15 @@ impl X11Connection {
 
         let screen = unsafe { (xlib.XDefaultScreen)(display) };
 
-        // Try to load XTest extension
-        let xtst = xtst::Xtst::open().ok();
-
-        // Try to load Xext extension
-        let xext = Xext::open().ok();
-
         info!(
-            "Opened X display: screen={}, XTest={:?}",
+            "Opened X display: screen={}",
             screen,
-            xtst.is_some()
         );
 
         Ok(Self {
             display,
             screen,
             xlib,
-            xtst,
-            xext,
         })
     }
 
@@ -91,7 +64,7 @@ impl X11Connection {
     }
 
     /// Get the xlib library
-    pub fn xlib(&self) -> &xlib::Xlib {
+    pub fn xlib(&self) -> &x11_dl::xlib::Xlib {
         &self.xlib
     }
 
@@ -192,16 +165,6 @@ impl X11Connection {
         self.screen_info(self.screen)
     }
 
-    /// Check if XTest extension is available
-    pub fn has_xtest(&self) -> bool {
-        self.xtst.is_some()
-    }
-
-    /// Check if Xext extension is available
-    pub fn has_xext(&self) -> bool {
-        self.xext.is_some()
-    }
-
     /// Query pointer position
     pub fn query_pointer(&self, window: Window) -> Result<PointerInfo> {
         let mut root_return: XlibWindow = 0;
@@ -268,11 +231,6 @@ impl X11Connection {
             );
         }
         Ok(())
-    }
-
-    /// Get XTest extension reference
-    pub fn xtst(&self) -> Option<&xtst::Xtst> {
-        self.xtst.as_ref()
     }
 }
 

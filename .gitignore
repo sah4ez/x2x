@@ -1,21 +1,12 @@
-*.o
-.deps/
-/INSTALL
-/aclocal.m4
-/autom4te.cache/
-/compile
-/config.guess
-/config.h
-/config.h.in
-/config.log
-/config.status
-/config.sub
-/configure
-/depcomp
-/install-sh
-/lawyerese.c
-/missing
-/stamp-h1
-/x2x
-Makefile
-Makefile.in
+# Rust
+/target/
+**/*.rs.bk
+*.pdb
+
+# IDEs
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db

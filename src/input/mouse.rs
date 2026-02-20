@@ -1,5 +1,7 @@
 //! Mouse input handling
 
+use log::{info, warn, debug};
+
 use crate::x11::event::{XEvent, XMotionEvent, XButtonEvent};
 use crate::x11::X11Connection;
 use crate::core::DpyInfo;
@@ -18,24 +20,19 @@ impl MouseHandler {
     }
 
     /// Handle a motion notify event
-    fn handle_motion(&self, event: &XMotionEvent, ctx: &mut DpyInfo) -> Result<bool> {
-        // TODO: Implement ProcessMotionNotify logic:
-        // 1. Get to_screen from ctx.to_screen
-        // 2. Map coordinates using ctx.x_tables/y_tables
-        // 3. Sanity check (unreasonableDelta)
-        // 4. Handle COORD_INCR/COORD_DECR
-        // 5. Fake motion on to display
+    fn handle_motion(&self, _event: &XMotionEvent, _ctx: &mut DpyInfo) -> Result<bool> {
+        // TODO: Implement ProcessMotionNotify logic
         todo!("Implement MouseHandler::handle_motion")
     }
 
     /// Handle a button press event
-    fn handle_button_press(&self, event: &XButtonEvent, ctx: &mut DpyInfo) -> Result<bool> {
+    fn handle_button_press(&self, _event: &XButtonEvent, _ctx: &mut DpyInfo) -> Result<bool> {
         // TODO: Implement ProcessButtonPress logic
         todo!("Implement MouseHandler::handle_button_press")
     }
 
     /// Handle a button release event
-    fn handle_button_release(&self, event: &XButtonEvent, ctx: &mut DpyInfo) -> Result<bool> {
+    fn handle_button_release(&self, _event: &XButtonEvent, _ctx: &mut DpyInfo) -> Result<bool> {
         // TODO: Implement ProcessButtonRelease logic
         todo!("Implement MouseHandler::handle_button_release")
     }

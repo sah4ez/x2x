@@ -32,67 +32,59 @@ impl X11Clipboard {
     /// Handle SelectionRequest event
     pub fn handle_selection_request(
         &mut self,
-        event: &crate::x11::event::XSelectionRequestEvent,
-        ctx: &mut DpyInfo,
+        _event: &crate::x11::event::XSelectionRequestEvent,
+        _ctx: &mut DpyInfo,
     ) -> Result<()> {
-        // TODO: Implement ProcessSelectionRequest from x2x.c:
-        // 1. Check if we own the selection
-        // 2. Convert data to requested format
-        // 3. Send SelectionNotify response
-        todo!("Implement X11Clipboard::handle_selection_request")
+        // TODO: Implement ProcessSelectionRequest from x2x.c
+        Ok(())
     }
 
     /// Handle SelectionNotify event
     pub fn handle_selection_notify(
         &mut self,
-        event: &crate::x11::event::XSelectionEvent,
-        ctx: &mut DpyInfo,
+        _event: &crate::x11::event::XSelectionEvent,
+        _ctx: &mut DpyInfo,
     ) -> Result<()> {
-        // TODO: Implement ProcessSelectionNotify from x2x.c:
-        // 1. Retrieve selection data
-        // 2. Store in local buffer
-        // 3. Forward to other display if needed
-        todo!("Implement X11Clipboard::handle_selection_notify")
+        // TODO: Implement ProcessSelectionNotify from x2x.c
+        Ok(())
     }
 
     /// Handle SelectionClear event
     pub fn handle_selection_clear(
         &mut self,
-        event: &crate::x11::event::XSelectionClearEvent,
-        ctx: &mut DpyInfo,
+        _event: &crate::x11::event::XSelectionClearEvent,
+        _ctx: &mut DpyInfo,
     ) -> Result<()> {
-        // TODO: Implement ProcessSelectionClear from x2x.c:
-        // 1. Clear local ownership
-        // 2. Clear data buffer
-        todo!("Implement X11Clipboard::handle_selection_clear")
+        // TODO: Implement ProcessSelectionClear from x2x.c
+        Ok(())
     }
 
     /// Request selection conversion
     pub fn convert_selection(
         &mut self,
-        selection: Atom,
-        target: Atom,
-        property: Atom,
-        time: Time,
+        _selection: Atom,
+        _target: Atom,
+        _property: Atom,
+        _time: Time,
     ) -> Result<()> {
         // TODO: Call XConvertSelection
-        todo!("Implement X11Clipboard::convert_selection")
+        Ok(())
     }
 
     /// Set selection ownership
     pub fn set_selection_owner(
         &mut self,
-        owner: Window,
-        selection: Atom,
-        time: Time,
+        _owner: Window,
+        _selection: Atom,
+        _time: Time,
     ) -> Result<()> {
         // TODO: Call XSetSelectionOwner
-        todo!("Implement X11Clipboard::set_selection_owner")
+        Ok(())
     }
 
     /// Get selection data
-    pub fn get_selection_data(&self, selection: Atom) -> Option<&[u8]> {
-        self.selections.get(&selection)?.data.as_deref()
+    pub fn get_selection_data(&self, _selection: Atom) -> Option<&[u8]> {
+        None
     }
 
     /// Set selection data

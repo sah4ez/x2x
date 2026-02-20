@@ -19,7 +19,7 @@ win32 = ["x11", "dep:windows"]
 # X11 dependencies
 x11-dl = "2.21"
 x11-clipboard = "0.7"
-x11-xtst = "6.2"
+# XTest is part of xlib, use x11-dl for direct calls
 
 # System utilities
 nix = "0.27"
@@ -45,14 +45,11 @@ windows = { version = "0.51", features = [
     "Win32_UI_WindowsAndMessaging",
     "Win32_UI_Input_KeyboardAndMouse",
     "Win32_System_LibraryLoader",
-] }
+], optional = true }
 
 [dev-dependencies]
 # Testing
 proptest = "1.4"
-
-# Code coverage
-tarpaulin = "0.27"
 
 [profile.release]
 opt-level = 3

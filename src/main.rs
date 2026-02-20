@@ -61,12 +61,6 @@ fn main() -> Result<()> {
 
     info!("X11 connections opened successfully");
 
-    // Check XTest extension on target display
-    if !to_conn.has_xtest() {
-        warn!("XTest extension not available on target display");
-        warn!("Input simulation may not work");
-    }
-
     // Initialize display info
     let from_screen_info = from_conn.current_screen_info()?;
     let to_screen_info = to_conn.current_screen_info()?;
@@ -78,7 +72,7 @@ fn main() -> Result<()> {
     let from_conn_arc = std::sync::Arc::new(from_conn);
     let to_conn_arc = std::sync::Arc::new(to_conn);
 
-    let mut dpy_info = DpyInfo::new(from_conn_arc, to_conn_arc)?;
+    let _dpy_info = DpyInfo::new(from_conn_arc, to_conn_arc)?;
 
     info!("Display info initialized");
 

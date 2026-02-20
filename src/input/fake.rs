@@ -40,19 +40,28 @@ impl FakeManager {
 
     /// Process all queued fake events
     pub fn process_queue(&mut self) -> Result<()> {
-        self.queue.process_all(|event| self.process_single_event(event))
+        let mut queue = std::mem::take(&mut self.queue);
+        queue.process_all(|event| self.process_single_event(event))?;
+        self.queue = queue;
+        Ok(())
     }
 
     /// Process a single fake event
     fn process_single_event(&self, event: &FakeEvent) -> Result<()> {
         use crate::x11::extension::XTestExtension;
 
+        let xtest = XTestExtension::from_connection(&self.conn);
+        let xtest = match xtest {
+            Some(x) => x,
+            None => return Err(anyhow::anyhow!("XTest not available")),
+        };
+
         match event {
             FakeEvent::Key { keycode, is_press, .. } => {
-                XTestExtension::fake_key(&self.conn, *keycode, *is_press)?;
+                xtest.fake_key(&self.conn, *keycode, *is_press)?;
             }
             FakeEvent::Button { button, is_press } => {
-                XTestExtension::fake_button(&self.conn, *button, *is_press)?;
+                xtest.fake_button(&self.conn, *button, *is_press)?;
             }
         }
 
@@ -83,7 +92,7 @@ mod tests {
     #[test]
     fn test_fake_manager() {
         // This is a stub test - real tests would require a mock X11 connection
-        // For now, just verify the API compiles
+        // For now, just verify to API compiles
         assert!(true);
     }
 }
