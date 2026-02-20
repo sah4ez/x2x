@@ -131,16 +131,14 @@ impl X11Connection {
     }
 
     /// Peek at the next event without removing it
-    pub fn peek_event(&self) -> Option<crate::x11::event::XEvent> {
-        if self.pending() == 0 {
-            return None;
-        }
+    pub fn peek_event(&self) -> crate::x11::event::XEvent {
         let mut xevent: XlibEvent = unsafe { std::mem::zeroed() };
         unsafe {
             (self.xlib.XPeekEvent)(self.display, &mut xevent);
         }
         // TODO: Convert XlibEvent to XEvent properly
-        Some(crate::x11::event::XEvent::GenericEvent(crate::x11::event::XGenericEvent { type_: 0 }))
+        // For now, return GenericEvent as placeholder
+        crate::x11::event::XEvent::GenericEvent(crate::x11::event::XGenericEvent { type_: 0 })
     }
 
     /// Get screen information

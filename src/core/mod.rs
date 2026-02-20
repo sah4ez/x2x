@@ -6,10 +6,12 @@
 pub mod dpy_info;
 pub mod coord_mapping;
 pub mod state;
+pub mod event_loop;
 
 pub use dpy_info::{DpyInfo, ShadowDisplay, ConnectionMode};
 pub use coord_mapping::{CoordinateMapping, LayoutMode, Direction};
 pub use state::{FakeEvent, FakeQueue, StickyKeys};
+pub use event_loop::EventLoop;
 
 // Constants
 pub const N_BUTTONS: usize = 20;
