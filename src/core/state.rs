@@ -16,6 +16,7 @@ pub enum FakeEvent {
     },
 }
 
+#[derive(Debug)]
 /// Queue for fake input events
 pub struct FakeQueue {
     events: VecDeque<FakeEvent>,

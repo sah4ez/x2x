@@ -7,16 +7,18 @@ pub mod connection;
 pub mod event;
 pub mod extension;
 pub mod selection;
+pub mod error_handler;
 
 pub use connection::X11Connection;
 pub use event::{XEvent, EventHandler};
 pub use extension::{XTestExtension, DpmsExtension};
 pub use selection::{X11Clipboard, SelectionState};
+pub use error_handler::{setup_error_handler, get_last_error, store_error, X11ErrorInfo};
 
 use anyhow::Result;
 
 /// X11 error types
-#[derive(Debug, thiserror::Error)]
+#[derive(Debug, Clone, thiserror::Error)]
 pub enum X11Error {
     #[error("Failed to open display: {0}")]
     OpenDisplayFailed(String),

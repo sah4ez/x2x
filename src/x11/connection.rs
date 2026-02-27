@@ -125,9 +125,7 @@ impl X11Connection {
     pub fn next_event(&self) -> crate::x11::event::XEvent {
         let mut xevent: XlibEvent = unsafe { std::mem::zeroed() };
         unsafe { (self.xlib.XNextEvent)(self.display, &mut xevent) };
-        // TODO: Convert XlibEvent to XEvent properly
-        // For now, return GenericEvent as placeholder
-        crate::x11::event::XEvent::GenericEvent(crate::x11::event::XGenericEvent { type_: 0 })
+        unsafe { crate::x11::event::XEvent::from_xlib_event(&xevent) }
     }
 
     /// Peek at the next event without removing it
@@ -136,9 +134,7 @@ impl X11Connection {
         unsafe {
             (self.xlib.XPeekEvent)(self.display, &mut xevent);
         }
-        // TODO: Convert XlibEvent to XEvent properly
-        // For now, return GenericEvent as placeholder
-        crate::x11::event::XEvent::GenericEvent(crate::x11::event::XGenericEvent { type_: 0 })
+        unsafe { crate::x11::event::XEvent::from_xlib_event(&xevent) }
     }
 
     /// Get screen information
@@ -266,5 +262,14 @@ mod tests {
     fn test_open_display() {
         let conn = X11Connection::open(None);
         assert!(conn.is_ok());
+    }
+}
+
+impl std::fmt::Debug for X11Connection {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("X11Connection")
+            .field("display", &self.display)
+            .field("screen", &self.screen)
+            .finish()
     }
 }

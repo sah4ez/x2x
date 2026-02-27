@@ -32,13 +32,19 @@ use clap::Parser;
 use log::{debug, error, info, warn};
 
 use utils::config::Config;
-use x11::X11Connection;
+use x11::{X11Connection, setup_error_handler};
+use x11::extension::{XTestExtension, DpmsExtension};
 use core::DpyInfo;
 
 fn main() -> Result<()> {
     // Initialize logger
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info"))
         .init();
+
+    // Setup X11 error handler
+    if let Err(e) = setup_error_handler() {
+        warn!("Failed to setup X11 error handler: {}", e);
+    }
 
     // Parse command line arguments
     let config = Config::parse();
@@ -68,6 +74,30 @@ fn main() -> Result<()> {
     info!("From display: {}x{}", from_screen_info.width, from_screen_info.height);
     info!("To display: {}x{}", to_screen_info.width, to_screen_info.height);
 
+    // Check for XTest extension (critical for x2x)
+    let xtest = XTestExtension::from_connection(&from_conn);
+    match &xtest {
+        Some(ext) if ext.is_available() => {
+            info!("✓ XTest extension available - fake input events will work");
+        }
+        _ => {
+            warn!("✗ XTest extension not available - fake input events will NOT work");
+            warn!("  x2x requires XTest for full functionality");
+        }
+    }
+
+    // Check for DPMS extension (optional)
+    let dpms = DpmsExtension::from_connection(&from_conn);
+    match &dpms {
+        Some(ext) if ext.is_available() => {
+            let enabled = ext.is_enabled(&from_conn).unwrap_or(false);
+            info!("✓ DPMS extension available (enabled: {})", enabled);
+        }
+        _ => {
+            debug!("DPMS extension not available - display power management will not work");
+        }
+    }
+
     // Create DpyInfo
     let from_conn_arc = std::sync::Arc::new(from_conn);
     let to_conn_arc = std::sync::Arc::new(to_conn);
@@ -79,6 +109,12 @@ fn main() -> Result<()> {
     // TODO: Run event loop
     // For now, just demonstrate that everything compiles
     info!("Event loop not yet implemented - see RUST_REFACTOR_PLAN.md");
+    info!("");
+    info!("Phase 2 implementation complete!");
+    info!("Next steps:");
+    info!("  1. Implement CoordinateMapping (Phase 4)");
+    info!("  2. Implement MouseHandler (Phase 5.1)");
+    info!("  3. Implement DpyInfo::connect() (Phase 7)");
 
     Ok(())
 }
