@@ -1,7 +1,7 @@
 //! Display information structures
 
 use crate::x11::X11Connection;
-use crate::core::FakeQueue;
+use crate::core::{FakeQueue, StickyKeys};
 use anyhow::Result;
 use std::collections::VecDeque;
 use std::sync::Arc;
@@ -10,7 +10,6 @@ use std::sync::Arc;
 ///
 /// This is the central structure that holds all state information
 /// for managing connections between two X displays.
-#[derive(Debug)]
 pub struct DpyInfo {
     // From display (source)
     pub from_conn: Arc<X11Connection>,
@@ -42,6 +41,7 @@ pub struct DpyInfo {
     // Input state tracking
     pub fake_queue: FakeQueue,
     pub button_mapping: [u8; crate::core::N_BUTTONS],
+    pub sticky_keys: StickyKeys,
 
     // Pointer state
     pub current_x: i32,
@@ -83,6 +83,7 @@ impl DpyInfo {
             selection_state: SelectionState::default(),
             fake_queue: FakeQueue::new(),
             button_mapping: [0; crate::core::N_BUTTONS],
+            sticky_keys: StickyKeys::new(),
             current_x: 0,
             current_y: 0,
             button_state: 0,

@@ -98,7 +98,7 @@ impl XTestExtension {
     pub fn fake_key(
         &self,
         _conn: &X11Connection,
-        _keycode: u8,
+        keycode: u8,
         _is_press: bool,
     ) -> Result<()> {
         if !self.available {
