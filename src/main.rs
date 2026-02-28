@@ -32,7 +32,7 @@ use clap::Parser;
 use log::{debug, error, info, warn};
 
 use utils::config::Config;
-use x11::{X11Connection, setup_error_handler};
+use x11::{X11Connection, setup_error_handler, X11Clipboard};
 use x11::extension::{XTestExtension, DpmsExtension};
 use core::DpyInfo;
 
@@ -102,19 +102,45 @@ fn main() -> Result<()> {
     let from_conn_arc = std::sync::Arc::new(from_conn);
     let to_conn_arc = std::sync::Arc::new(to_conn);
 
-    let _dpy_info = DpyInfo::new(from_conn_arc, to_conn_arc)?;
+    let mut dpy_info = DpyInfo::new(from_conn_arc, to_conn_arc)?;
 
     info!("Display info initialized");
 
+    // Initialize clipboard
+    // Use a dummy window for now - this will be properly initialized in Phase 7
+    let prop_window = dpy_info.from_root;
+    let ping_atom = 12345; // TODO: Get proper atom in Phase 7
+
+    let _clipboard = X11Clipboard::new(
+        dpy_info.from_conn.clone(),
+        prop_window,
+        ping_atom,
+    )?;
+
+    info!("Clipboard initialized");
+
     // TODO: Run event loop
     // For now, just demonstrate that everything compiles
-    info!("Event loop not yet implemented - see RUST_REFACTOR_PLAN.md");
     info!("");
-    info!("Phase 2 implementation complete!");
+    info!("Phase 6 implementation complete!");
     info!("Next steps:");
-    info!("  1. Implement CoordinateMapping (Phase 4)");
-    info!("  2. Implement MouseHandler (Phase 5.1)");
-    info!("  3. Implement DpyInfo::connect() (Phase 7)");
+    info!("  1. Implement Connection Management (Phase 7)");
+    info!("     - DpyInfo::connect() and disconnect()");
+    info!("     - Create trigger windows");
+    info!("     - Grab pointer");
+    info!("  2. Run full event loop with all handlers");
+    info!("");
+    info!("Project status:");
+    info!("  - Phase 1: ✅ Complete");
+    info!("  - Phase 2: ✅ Complete");
+    info!("  - Phase 3: ✅ Complete");
+    info!("  - Phase 4: ✅ Complete");
+    info!("  - Phase 5: ✅ Complete");
+    info!("  - Phase 6: ✅ Complete (this phase)");
+    info!("  - Phase 7: 🚧 Next");
+    info!("  - Phase 8: ✅ Complete");
+    info!("  - Phase 9: 🚧 In progress");
+    info!("  - Phase 10: 🚧 Next");
 
     Ok(())
 }

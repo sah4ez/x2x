@@ -1,6 +1,6 @@
 //! Display information structures
 
-use crate::x11::X11Connection;
+use crate::x11::{X11Connection, SelectionState};
 use crate::core::{FakeQueue, StickyKeys};
 use anyhow::Result;
 use std::collections::VecDeque;
@@ -251,89 +251,6 @@ pub enum ConnectionMode {
     Connected,
 }
 
-/// Selection state for clipboard sharing
-///
-/// This tracks the state of X Selection (clipboard) operations
-/// between the two displays.
-#[derive(Debug, Clone, Default)]
-pub struct SelectionState {
-    pub state: SelectionInternalState,
-    pub owner: Option<u64>,
-    pub timestamp: u32,
-    pub revision: u32,
-    pub data: Option<Vec<u8>>,
-}
-
-impl SelectionState {
-    /// Create a new selection state
-    pub fn new() -> Self {
-        Self {
-            state: SelectionInternalState::Off,
-            owner: None,
-            timestamp: 0,
-            revision: 0,
-            data: None,
-        }
-    }
-
-    /// Check if selection is owned
-    pub fn is_owned(&self) -> bool {
-        self.owner.is_some()
-    }
-
-    /// Get selection owner
-    pub fn owner(&self) -> Option<u64> {
-        self.owner
-    }
-
-    /// Set selection owner
-    pub fn set_owner(&mut self, owner: Option<u64>) {
-        self.owner = owner;
-        self.revision += 1;
-    }
-
-    /// Get selection timestamp
-    pub fn timestamp(&self) -> u32 {
-        self.timestamp
-    }
-
-    /// Set selection timestamp
-    pub fn set_timestamp(&mut self, timestamp: u32) {
-        self.timestamp = timestamp;
-    }
-
-    /// Get selection revision
-    pub fn revision(&self) -> u32 {
-        self.revision
-    }
-
-    /// Get selection data
-    pub fn data(&self) -> Option<&[u8]> {
-        self.data.as_deref()
-    }
-
-    /// Set selection data
-    pub fn set_data(&mut self, data: Vec<u8>) {
-        self.data = Some(data);
-        self.revision += 1;
-    }
-
-    /// Clear selection data
-    pub fn clear_data(&mut self) {
-        self.data = None;
-    }
-
-    /// Get internal state
-    pub fn internal_state(&self) -> SelectionInternalState {
-        self.state
-    }
-
-    /// Set internal state
-    pub fn set_state(&mut self, state: SelectionInternalState) {
-        self.state = state;
-    }
-}
-
 /// Internal selection state machine
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SelectionInternalState {
@@ -420,29 +337,7 @@ mod tests {
         assert_eq!(shadow.name, "test_screen");
     }
 
-    #[test]
-    fn test_selection_state() {
-        let mut state = SelectionState::new();
-
-        assert!(!state.is_owned());
-        assert_eq!(state.owner(), None);
-        assert_eq!(state.timestamp(), 0);
-        assert_eq!(state.revision(), 0);
-        assert_eq!(state.data(), None);
-
-        state.set_owner(Some(0x12345678));
-        assert!(state.is_owned());
-        assert_eq!(state.owner(), Some(0x12345678));
-
-        state.set_timestamp(12345);
-        assert_eq!(state.timestamp(), 12345);
-
-        state.set_data(b"test data".to_vec());
-        assert_eq!(state.data(), Some(b"test data".as_slice()));
-
-        state.clear_data();
-        assert_eq!(state.data(), None);
-    }
+    // SelectionState tests moved to src/x11/clipboard.rs
 
     #[test]
     fn test_dpms_status() {

@@ -194,8 +194,8 @@ mod tests {
     #[test]
     fn test_unreasonable_delta() {
         // Test delta calculation - correct values
-        let delta_x = (100 - 95).abs();
-        let delta_y = (105 - 100).abs();
+        let delta_x = (100i32 - 95i32).abs();
+        let delta_y = (105i32 - 100i32).abs();
         let delta = delta_x.max(delta_y);
         assert_eq!(delta, 5);
     }

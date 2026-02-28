@@ -12,10 +12,10 @@ pub use dpy_info::{
     DpyInfo,
     ShadowDisplay,
     ConnectionMode,
-    SelectionState,
     SelectionInternalState,
     DpmsStatus,
 };
+pub use crate::x11::SelectionState;
 pub use coord_mapping::{CoordinateMapping, LayoutMode, Direction};
 pub use state::{FakeEvent, FakeQueue, StickyKeys};
 pub use event_loop::EventLoop;

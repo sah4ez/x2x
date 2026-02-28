@@ -6,13 +6,13 @@
 pub mod connection;
 pub mod event;
 pub mod extension;
-pub mod selection;
+pub mod clipboard;
 pub mod error_handler;
 
 pub use connection::X11Connection;
 pub use event::{XEvent, EventHandler};
 pub use extension::{XTestExtension, DpmsExtension};
-pub use selection::{X11Clipboard, SelectionState};
+pub use clipboard::{X11Clipboard, Selection, ClipboardTarget, SelectionState, ClipboardData, AtomCache};
 pub use error_handler::{setup_error_handler, get_last_error, store_error, X11ErrorInfo};
 
 use anyhow::Result;
