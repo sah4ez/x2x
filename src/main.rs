@@ -23,6 +23,7 @@ mod core;
 mod input;
 mod clipboard;
 mod utils;
+mod connection;
 
 #[cfg(feature = "win32")]
 mod win32;
