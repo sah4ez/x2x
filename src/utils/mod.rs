@@ -7,7 +7,7 @@ pub mod config;
 pub mod errors;
 
 pub use config::Config;
-pub use errors::{X2xError, Result};
+pub use errors::{Result, X2xError};
 
 #[cfg(test)]
 mod tests {

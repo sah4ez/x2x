@@ -3,20 +3,24 @@
 //! This module provides safe wrappers around Xlib functions and
 //! handles low-level X11 operations.
 
+pub mod clipboard;
 pub mod connection;
+pub mod error_handler;
 pub mod event;
 pub mod extension;
-pub mod selection;
 
+pub use clipboard::{
+    AtomCache, ClipboardData, ClipboardTarget, Selection, SelectionState, X11Clipboard,
+};
 pub use connection::X11Connection;
-pub use event::{XEvent, EventHandler};
-pub use extension::{XTestExtension, DpmsExtension};
-pub use selection::{X11Clipboard, SelectionState};
+pub use error_handler::{get_last_error, setup_error_handler, store_error, X11ErrorInfo};
+pub use event::{EventHandler, XEvent};
+pub use extension::{DpmsExtension, XTestExtension};
 
 use anyhow::Result;
 
 /// X11 error types
-#[derive(Debug, thiserror::Error)]
+#[derive(Debug, Clone, thiserror::Error)]
 pub enum X11Error {
     #[error("Failed to open display: {0}")]
     OpenDisplayFailed(String),

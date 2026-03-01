@@ -1,16 +1,16 @@
 //! X11 connection management using x11-dl
 
-use log::{info, warn, debug};
+use log::{debug, info, warn};
 
-use crate::x11::{X11Error, Window, Atom, Time, ScreenInfo};
+use crate::x11::{Atom, ScreenInfo, Time, Window, X11Error};
 use anyhow::{Context, Result};
 use std::ffi::CString;
-use std::os::raw::{c_char, c_int, c_uint};
-use std::sync::Arc;
+use std::os::raw::{c_int, c_uint};
 use std::ptr;
+use std::sync::Arc;
 
 // Import x11-dl library
-use x11_dl::xlib::{Display, XEvent as XlibEvent, Window as XlibWindow};
+use x11_dl::xlib::{Display, Window as XlibWindow, XEvent as XlibEvent};
 
 /// X11 connection wrapper
 pub struct X11Connection {
@@ -38,18 +38,14 @@ impl X11Connection {
         let display = unsafe { (xlib.XOpenDisplay)(display_name_ptr) };
 
         if display.is_null() {
-            return Err(X11Error::OpenDisplayFailed(
-                display_name.unwrap_or(":0").to_string(),
-            )
-            .into());
+            return Err(
+                X11Error::OpenDisplayFailed(display_name.unwrap_or(":0").to_string()).into(),
+            );
         }
 
         let screen = unsafe { (xlib.XDefaultScreen)(display) };
 
-        info!(
-            "Opened X display: screen={}",
-            screen,
-        );
+        info!("Opened X display: screen={}", screen,);
 
         Ok(Self {
             display,
@@ -80,9 +76,7 @@ impl X11Connection {
 
     /// Get the root window for a specific screen
     pub fn root_window_of_screen(&self, screen: i32) -> Window {
-        unsafe {
-            (self.xlib.XRootWindow)(self.display, screen) as u64
-        }
+        unsafe { (self.xlib.XRootWindow)(self.display, screen) as u64 }
     }
 
     /// Get the screen width
@@ -125,9 +119,7 @@ impl X11Connection {
     pub fn next_event(&self) -> crate::x11::event::XEvent {
         let mut xevent: XlibEvent = unsafe { std::mem::zeroed() };
         unsafe { (self.xlib.XNextEvent)(self.display, &mut xevent) };
-        // TODO: Convert XlibEvent to XEvent properly
-        // For now, return GenericEvent as placeholder
-        crate::x11::event::XEvent::GenericEvent(crate::x11::event::XGenericEvent { type_: 0 })
+        unsafe { crate::x11::event::XEvent::from_xlib_event(&xevent) }
     }
 
     /// Peek at the next event without removing it
@@ -136,9 +128,7 @@ impl X11Connection {
         unsafe {
             (self.xlib.XPeekEvent)(self.display, &mut xevent);
         }
-        // TODO: Convert XlibEvent to XEvent properly
-        // For now, return GenericEvent as placeholder
-        crate::x11::event::XEvent::GenericEvent(crate::x11::event::XGenericEvent { type_: 0 })
+        unsafe { crate::x11::event::XEvent::from_xlib_event(&xevent) }
     }
 
     /// Get screen information
@@ -266,5 +256,14 @@ mod tests {
     fn test_open_display() {
         let conn = X11Connection::open(None);
         assert!(conn.is_ok());
+    }
+}
+
+impl std::fmt::Debug for X11Connection {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("X11Connection")
+            .field("display", &self.display)
+            .field("screen", &self.screen)
+            .finish()
     }
 }

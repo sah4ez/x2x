@@ -3,16 +3,16 @@
 //! This module handles mouse and keyboard input events,
 //! including the fake event queue for simulating input.
 
-pub mod mouse;
-pub mod keyboard;
 pub mod fake;
+pub mod keyboard;
+pub mod mouse;
 
-pub use mouse::MouseHandler;
-pub use keyboard::KeyboardHandler;
 pub use fake::FakeEvent;
+pub use keyboard::KeyboardHandler;
+pub use mouse::MouseHandler;
 
-use crate::x11::event::XEvent;
 use crate::core::DpyInfo;
+use crate::x11::event::XEvent;
 use anyhow::Result;
 
 /// Input handler trait

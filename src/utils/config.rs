@@ -125,10 +125,22 @@ mod tests {
 
     #[test]
     fn test_edge_direction_conversion() {
-        assert_eq!(EdgeDirection::East.to_direction(), crate::core::Direction::Right);
-        assert_eq!(EdgeDirection::West.to_direction(), crate::core::Direction::Left);
-        assert_eq!(EdgeDirection::North.to_direction(), crate::core::Direction::Up);
-        assert_eq!(EdgeDirection::South.to_direction(), crate::core::Direction::Down);
+        assert_eq!(
+            EdgeDirection::East.to_direction(),
+            crate::core::Direction::Right
+        );
+        assert_eq!(
+            EdgeDirection::West.to_direction(),
+            crate::core::Direction::Left
+        );
+        assert_eq!(
+            EdgeDirection::North.to_direction(),
+            crate::core::Direction::Up
+        );
+        assert_eq!(
+            EdgeDirection::South.to_direction(),
+            crate::core::Direction::Down
+        );
     }
 
     #[test]

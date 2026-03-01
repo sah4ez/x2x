@@ -3,15 +3,16 @@
 //! This module contains the main data structures for managing X displays
 //! and their state.
 
-pub mod dpy_info;
 pub mod coord_mapping;
-pub mod state;
+pub mod dpy_info;
 pub mod event_loop;
+pub mod state;
 
-pub use dpy_info::{DpyInfo, ShadowDisplay, ConnectionMode};
-pub use coord_mapping::{CoordinateMapping, LayoutMode, Direction};
-pub use state::{FakeEvent, FakeQueue, StickyKeys};
+pub use crate::x11::SelectionState;
+pub use coord_mapping::{CoordinateMapping, Direction, LayoutMode};
+pub use dpy_info::{ConnectionMode, DpmsStatus, DpyInfo, SelectionInternalState, ShadowDisplay};
 pub use event_loop::EventLoop;
+pub use state::{FakeEvent, FakeQueue, StickyKeys};
 
 // Constants
 pub const N_BUTTONS: usize = 20;
@@ -28,7 +29,11 @@ pub const fn is_special_coord(coord: i16) -> bool {
 
 /// Convert coordinate to special value if applicable
 pub const fn special_coord(coord: i16) -> i16 {
-    if is_special_coord(coord) { coord } else { 0 }
+    if is_special_coord(coord) {
+        coord
+    } else {
+        0
+    }
 }
 
 #[cfg(test)]
