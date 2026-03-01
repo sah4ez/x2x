@@ -1,13 +1,13 @@
 //! Mouse input handling
 
-use log::{info, warn, debug};
-use crate::x11::event::{XEvent, XMotionEvent, XButtonEvent};
-use crate::x11::X11Connection;
-use crate::x11::extension::XTestExtension;
 use crate::core::DpyInfo;
-use crate::core::{COORD_INCR, COORD_DECR};
+use crate::core::{COORD_DECR, COORD_INCR};
 use crate::input::InputHandler;
+use crate::x11::event::{XButtonEvent, XEvent, XMotionEvent};
+use crate::x11::extension::XTestExtension;
+use crate::x11::X11Connection;
 use anyhow::Result;
+use log::{debug, info, warn};
 
 /// Mouse event handler
 ///
@@ -45,7 +45,10 @@ impl MouseHandler {
 
         // Sanity check: unreasonable movement
         if delta > ctx.unreasonable_delta as i32 {
-            warn!("Unreasonable mouse movement detected: delta={}, ignoring", delta);
+            warn!(
+                "Unreasonable mouse movement detected: delta={}, ignoring",
+                delta
+            );
             ctx.update_pointer(event.x, event.y);
             return Ok(false);
         }
@@ -61,27 +64,34 @@ impl MouseHandler {
 
         // Map X coordinate to target display
         let to_screen = ctx.to_screen;
-        let mapped_x = ctx.x_tables
+        let mapped_x = ctx
+            .x_tables
             .get(to_screen)
             .and_then(|table| table.get(event.x as usize))
             .copied()
             .unwrap_or(COORD_INCR as i16);
 
         // Map Y coordinate to target display
-        let mapped_y = ctx.y_tables
+        let mapped_y = ctx
+            .y_tables
             .get(to_screen)
             .and_then(|table| table.get(event.y as usize))
             .copied()
             .unwrap_or(COORD_INCR as i16);
 
-        debug!("Mapped coordinates: ({}, {}) -> ({}, {})", event.x, event.y, mapped_x, mapped_y);
+        debug!(
+            "Mapped coordinates: ({}, {}) -> ({}, {})",
+            event.x, event.y, mapped_x, mapped_y
+        );
 
         // Check for special coordinate values (COORD_INCR = -1, COORD_DECR = -2)
         let is_incr = mapped_x < 0;
         let is_decr = mapped_x < COORD_DECR as i16 && !is_incr;
 
-        debug!("Mapped coordinates: ({}, {}) -> incr={}, decr={}", 
-            event.x, event.y, is_incr, is_decr);
+        debug!(
+            "Mapped coordinates: ({}, {}) -> incr={}, decr={}",
+            event.x, event.y, is_incr, is_decr
+        );
 
         if is_incr {
             info!("COORD_INCR detected - switching to next screen");
@@ -99,8 +109,16 @@ impl MouseHandler {
         let xtest = XTestExtension::from_connection(&ctx.to_conn);
         match xtest {
             Some(ext) if ext.is_available() => {
-                ext.fake_motion(&ctx.to_conn, ctx.to_screen as i32, mapped_x as i32, mapped_y as i32)?;
-                debug!("Faked mouse motion to ({}, {}) on screen {}", mapped_x, mapped_y, to_screen);
+                ext.fake_motion(
+                    &ctx.to_conn,
+                    ctx.to_screen as i32,
+                    mapped_x as i32,
+                    mapped_y as i32,
+                )?;
+                debug!(
+                    "Faked mouse motion to ({}, {}) on screen {}",
+                    mapped_x, mapped_y, to_screen
+                );
             }
             _ => {
                 warn!("XTest not available, cannot fake mouse motion");
@@ -117,7 +135,10 @@ impl MouseHandler {
         // Update button state
         let button_mask = 1u32 << event.button;
         ctx.update_button_state(button_mask, true);
-        debug!("Button {} pressed (mask: 0x{:x})", event.button, button_mask);
+        debug!(
+            "Button {} pressed (mask: 0x{:x})",
+            event.button, button_mask
+        );
 
         // Check if connected
         if !ctx.is_connected() {
@@ -146,7 +167,10 @@ impl MouseHandler {
         // Update button state
         let button_mask = 1u32 << event.button;
         ctx.update_button_state(button_mask, false);
-        debug!("Button {} released (mask: 0x{:x})", event.button, button_mask);
+        debug!(
+            "Button {} released (mask: 0x{:x})",
+            event.button, button_mask
+        );
 
         // Check if connected
         if !ctx.is_connected() {

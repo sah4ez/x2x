@@ -1,24 +1,12 @@
 //! Connection management between X displays
 
-use crate::x11::{X11Connection, X11Error, Window};
 use crate::core::DpyInfo;
+use crate::x11::{Window, X11Connection, X11Error};
 use anyhow::{Context, Result};
-use log::{info, warn, debug, error};
+use log::{debug, error, info, warn};
 use x11_dl::xlib::{
-    self,
-    Display,
-    CurrentTime,
-    PointerRoot,
-    GrabModeAsync,
-    PointerMotionMask,
-    ButtonPressMask,
-    ButtonReleaseMask,
-    CWX,
-    CWY,
-    CWWidth,
-    CWHeight,
-    CWStackMode,
-    Above,
+    self, Above, ButtonPressMask, ButtonReleaseMask, CWHeight, CWStackMode, CWWidth, CurrentTime,
+    Display, GrabModeAsync, PointerMotionMask, PointerRoot, CWX, CWY,
 };
 
 use std::os::raw::{c_int, c_uint, c_ulong};
@@ -150,7 +138,11 @@ impl ConnectionManager {
     /// 7. Set mode to Connected
     ///
     /// This is called when the cursor crosses the screen edge.
-    pub fn connect(&mut self, from_focus: &mut FocusState, to_focus: &mut FocusState) -> Result<()> {
+    pub fn connect(
+        &mut self,
+        from_focus: &mut FocusState,
+        to_focus: &mut FocusState,
+    ) -> Result<()> {
         info!("Connecting displays...");
 
         let from_display = self.from_conn.display_ptr();
@@ -176,17 +168,15 @@ impl ConnectionManager {
             from_focus.window = focus_window;
             from_focus.revert_to = revert_to;
 
-            debug!("Saved from focus: window=0x{:x}, revert={}", focus_window, revert_to);
+            debug!(
+                "Saved from focus: window=0x{:x}, revert={}",
+                focus_window, revert_to
+            );
         }
 
         // Set focus to PointerRoot on from display
         unsafe {
-            (from_xlib.XSetInputFocus)(
-                from_display,
-                PointerRoot as u64,
-                0,
-                CurrentTime as u64,
-            );
+            (from_xlib.XSetInputFocus)(from_display, PointerRoot as u64, 0, CurrentTime as u64);
             (from_xlib.XSync)(from_display, 0);
         }
 
@@ -205,8 +195,10 @@ impl ConnectionManager {
                     CurrentTime as u64,
                 );
                 (to_xlib.XSync)(to_display, 0);
-                debug!("Restored to focus: window=0x{:x}, revert={}",
-                    to_focus.window, to_focus.revert_to);
+                debug!(
+                    "Restored to focus: window=0x{:x}, revert={}",
+                    to_focus.window, to_focus.revert_to
+                );
             }
         }
 
@@ -235,7 +227,10 @@ impl ConnectionManager {
             if result != 0 {
                 warn!("Failed to grab pointer: {}", result);
             } else {
-                debug!("Grabbed pointer on trigger window 0x{:x}", self.trigger_window);
+                debug!(
+                    "Grabbed pointer on trigger window 0x{:x}",
+                    self.trigger_window
+                );
             }
         }
 
@@ -253,18 +248,17 @@ impl ConnectionManager {
             if result != 0 {
                 warn!("Failed to grab keyboard: {}", result);
             } else {
-                debug!("Grabbed keyboard on trigger window 0x{:x}", self.trigger_window);
+                debug!(
+                    "Grabbed keyboard on trigger window 0x{:x}",
+                    self.trigger_window
+                );
             }
         }
 
         // Enable motion events on trigger window
         unsafe {
             let event_mask = (self.event_mask as i64) | (PointerMotionMask as i64);
-            (from_xlib.XSelectInput)(
-                from_display,
-                self.trigger_window as u64,
-                event_mask,
-            );
+            (from_xlib.XSelectInput)(from_display, self.trigger_window as u64, event_mask);
         }
 
         // Sync to ensure all operations are complete
@@ -314,17 +308,15 @@ impl ConnectionManager {
             to_focus.window = focus_window;
             to_focus.revert_to = revert_to;
 
-            debug!("Saved to focus: window=0x{:x}, revert={}", focus_window, revert_to);
+            debug!(
+                "Saved to focus: window=0x{:x}, revert={}",
+                focus_window, revert_to
+            );
         }
 
         // Set focus to PointerRoot on to display
         unsafe {
-            (to_xlib.XSetInputFocus)(
-                to_display,
-                PointerRoot as u64,
-                0,
-                CurrentTime as u64,
-            );
+            (to_xlib.XSetInputFocus)(to_display, PointerRoot as u64, 0, CurrentTime as u64);
             (to_xlib.XSync)(to_display, 0);
         }
 
@@ -343,8 +335,10 @@ impl ConnectionManager {
                     CurrentTime as u64,
                 );
                 (from_xlib.XSync)(from_display, 0);
-                debug!("Restored from focus: window=0x{:x}, revert={}",
-                    from_focus.window, from_focus.revert_to);
+                debug!(
+                    "Restored from focus: window=0x{:x}, revert={}",
+                    from_focus.window, from_focus.revert_to
+                );
             }
         }
 

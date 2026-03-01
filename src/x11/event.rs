@@ -1,14 +1,18 @@
 //! X11 event handling
 
-use crate::x11::{Window, Atom, Time};
-use x11_dl::xlib::{XEvent as XlibEvent, XAnyEvent};
-use x11_dl::xlib::{MotionNotify, ButtonPress, ButtonRelease, KeyPress, KeyRelease,
-                      EnterNotify, LeaveNotify, SelectionRequest, SelectionNotify,
-                      SelectionClear, PropertyNotify, ClientMessage};
+use crate::x11::{Atom, Time, Window};
+#[allow(unused_imports)]
 use std::mem;
+#[allow(unused_imports)]
+use x11_dl::xlib::{
+    ButtonPress, ButtonRelease, ClientMessage, EnterNotify, KeyPress, KeyRelease, LeaveNotify,
+    MotionNotify, PropertyNotify, SelectionClear, SelectionNotify, SelectionRequest,
+};
+use x11_dl::xlib::{XAnyEvent, XEvent as XlibEvent};
 
 /// X11 event types
 #[derive(Debug, Clone)]
+#[allow(non_upper_case_globals)] // X11 constants are lowercase, suppress warnings
 pub enum XEvent {
     MotionNotify(XMotionEvent),
     ButtonPress(XButtonEvent),
@@ -22,6 +26,7 @@ pub enum XEvent {
     KeymapNotify(XKeymapEvent),
     Expose(XExposeEvent),
     GraphicsExpose(XGraphicsExposeEvent),
+    #[allow(non_upper_case_globals)]
     NoExpose(XNoExposeEvent),
     VisibilityNotify(XVisibilityEvent),
     CreateNotify(XCreateWindowEvent),
@@ -38,16 +43,19 @@ pub enum XEvent {
     CirculateRequest(XCirculateRequestEvent),
     PropertyNotify(XPropertyEvent),
     SelectionRequest(XSelectionRequestEvent),
+    #[allow(non_upper_case_globals)]
     SelectionNotify(XSelectionEvent),
+    #[allow(non_upper_case_globals)]
     SelectionClear(XSelectionClearEvent),
     ColormapNotify(XColormapEvent),
+    #[allow(non_upper_case_globals)]
     ClientMessage(XClientMessageEvent),
     MappingNotify(XMappingEvent),
     GenericEvent(XGenericEvent),
 }
 
 /// Motion notify event
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub struct XMotionEvent {
     pub type_: i32,
     pub serial: u64,
@@ -61,13 +69,13 @@ pub struct XMotionEvent {
     pub y: i32,
     pub x_root: i32,
     pub y_root: i32,
-    pub state: u32,
-    pub is_hint: i8,
+    pub state: u8,
+    pub is_hint: bool,
     pub same_screen: bool,
 }
 
-/// Button event (press/release)
-#[derive(Debug, Clone, Copy)]
+/// Button event
+#[derive(Debug, Clone)]
 pub struct XButtonEvent {
     pub type_: i32,
     pub serial: u64,
@@ -81,13 +89,13 @@ pub struct XButtonEvent {
     pub y: i32,
     pub x_root: i32,
     pub y_root: i32,
-    pub state: u32,
+    pub state: u8,
     pub button: u32,
     pub same_screen: bool,
 }
 
-/// Key event (press/release)
-#[derive(Debug, Clone, Copy)]
+/// Key event
+#[derive(Debug, Clone)]
 pub struct XKeyEvent {
     pub type_: i32,
     pub serial: u64,
@@ -101,13 +109,13 @@ pub struct XKeyEvent {
     pub y: i32,
     pub x_root: i32,
     pub y_root: i32,
-    pub state: u32,
-    pub keycode: u32,
+    pub state: u8,
+    pub keycode: u8,
     pub same_screen: bool,
 }
 
 /// Crossing event (enter/leave)
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub struct XCrossingEvent {
     pub type_: i32,
     pub serial: u64,
@@ -121,114 +129,227 @@ pub struct XCrossingEvent {
     pub y: i32,
     pub x_root: i32,
     pub y_root: i32,
-    pub mode: i32,
-    pub detail: i32,
+    pub mode: u8,
+    pub detail: u32,
     pub same_screen: bool,
     pub focus: bool,
-    pub state: u32,
+    pub state: u8,
 }
 
-// Other event types - simplified versions
-#[derive(Debug, Clone, Copy)]
-pub struct XExposeEvent {
-    pub type_: i32,
-}
-
-#[derive(Debug, Clone, Copy)]
-pub struct XGraphicsExposeEvent {
-    pub type_: i32,
-}
-
-#[derive(Debug, Clone, Copy)]
-pub struct XNoExposeEvent {
-    pub type_: i32,
-}
-
-#[derive(Debug, Clone, Copy)]
-pub struct XVisibilityEvent {
-    pub type_: i32,
-}
-
-#[derive(Debug, Clone, Copy)]
-pub struct XCreateWindowEvent {
-    pub type_: i32,
-}
-
-#[derive(Debug, Clone, Copy)]
-pub struct XDestroyWindowEvent {
-    pub type_: i32,
-}
-
-#[derive(Debug, Clone, Copy)]
-pub struct XUnmapEvent {
-    pub type_: i32,
-}
-
-#[derive(Debug, Clone, Copy)]
-pub struct XMapEvent {
-    pub type_: i32,
-}
-
-#[derive(Debug, Clone, Copy)]
-pub struct XMapRequestEvent {
-    pub type_: i32,
-}
-
-#[derive(Debug, Clone, Copy)]
-pub struct XReparentEvent {
-    pub type_: i32,
-}
-
-#[derive(Debug, Clone, Copy)]
-pub struct XConfigureEvent {
-    pub type_: i32,
-}
-
-#[derive(Debug, Clone, Copy)]
-pub struct XConfigureRequestEvent {
-    pub type_: i32,
-}
-
-#[derive(Debug, Clone, Copy)]
-pub struct XGravityEvent {
-    pub type_: i32,
-}
-
-#[derive(Debug, Clone, Copy)]
-pub struct XResizeRequestEvent {
-    pub type_: i32,
-}
-
-#[derive(Debug, Clone, Copy)]
-pub struct XCirculateEvent {
-    pub type_: i32,
-}
-
-#[derive(Debug, Clone, Copy)]
-pub struct XCirculateRequestEvent {
-    pub type_: i32,
-}
-
-#[derive(Debug, Clone, Copy)]
-pub struct XColormapEvent {
-    pub type_: i32,
-}
-
-#[derive(Debug, Clone, Copy)]
-pub struct XKeymapEvent {
-    pub type_: i32,
-}
-
-#[derive(Debug, Clone, Copy)]
+/// Focus change event
+#[derive(Debug, Clone)]
 pub struct XFocusChangeEvent {
     pub type_: i32,
+    pub serial: u64,
+    pub send_event: bool,
+    pub display: *mut (),
+    pub window: u64,
+    pub mode: u8,
 }
 
-#[derive(Debug, Clone, Copy)]
-pub struct XMappingEvent {
+/// Keymap notify event
+#[derive(Debug, Clone)]
+pub struct XKeymapEvent {
     pub type_: i32,
+    pub serial: u64,
+    pub send_event: bool,
+    pub display: *mut (),
+    pub window: u64,
 }
-#[derive(Debug, Clone, Copy)]
+
+/// Expose event
+#[derive(Debug, Clone)]
+pub struct XExposeEvent {
+    pub type_: i32,
+    pub serial: u64,
+    pub send_event: bool,
+    pub display: *mut (),
+    pub window: u64,
+    pub x: i32,
+    pub y: i32,
+    pub width: u32,
+    pub height: u32,
+    pub count: u32,
+}
+
+/// Graphics expose event
+#[derive(Debug, Clone)]
+pub struct XGraphicsExposeEvent {
+    pub type_: i32,
+    pub serial: u64,
+    pub send_event: bool,
+    pub display: *mut (),
+    pub drawable: u64,
+}
+
+/// Visibility notify event
+#[derive(Debug, Clone)]
+pub struct XVisibilityEvent {
+    pub type_: i32,
+    pub serial: u64,
+    pub send_event: bool,
+    pub display: *mut (),
+    pub window: u64,
+    pub state: u8,
+}
+
+/// Create window event
+#[derive(Debug, Clone)]
+pub struct XCreateWindowEvent {
+    pub type_: i32,
+    pub serial: u64,
+    pub send_event: bool,
+    pub display: *mut (),
+    pub parent: u64,
+    pub window: u64,
+}
+
+/// Destroy window event
+#[derive(Debug, Clone)]
+pub struct XDestroyWindowEvent {
+    pub type_: i32,
+    pub serial: u64,
+    pub send_event: bool,
+    pub display: *mut (),
+    pub event: u64,
+    pub window: u64,
+}
+
+/// Unmap event
+#[derive(Debug, Clone)]
+pub struct XUnmapEvent {
+    pub type_: i32,
+    pub serial: u64,
+    pub send_event: bool,
+    pub display: *mut (),
+    pub event: u64,
+    pub window: u64,
+    pub from_configure: bool,
+}
+
+/// Map event
+#[derive(Debug, Clone)]
+pub struct XMapEvent {
+    pub type_: i32,
+    pub serial: u64,
+    pub send_event: bool,
+    pub display: *mut (),
+    pub event: u64,
+    pub window: u64,
+    pub override_redirect: bool,
+}
+
+/// Map request event
+#[derive(Debug, Clone)]
+pub struct XMapRequestEvent {
+    pub type_: i32,
+    pub serial: u64,
+    pub send_event: bool,
+    pub display: *mut (),
+    pub parent: u64,
+    pub window: u64,
+}
+
+/// Reparent event
+#[derive(Debug, Clone)]
+pub struct XReparentEvent {
+    pub type_: i32,
+    pub serial: u64,
+    pub send_event: bool,
+    pub display: *mut (),
+    pub event: u64,
+    pub window: u64,
+    pub parent: u64,
+    pub override_redirect: bool,
+}
+
+/// Configure event
+#[derive(Debug, Clone)]
+pub struct XConfigureEvent {
+    pub type_: i32,
+    pub serial: u64,
+    pub send_event: bool,
+    pub display: *mut (),
+    pub event: u64,
+    pub window: u64,
+    pub x: i32,
+    pub y: i32,
+    pub width: i32,
+    pub height: i32,
+    pub border_width: i32,
+    pub above: u64,
+    pub override_redirect: bool,
+}
+
+/// Configure request event
+#[derive(Debug, Clone)]
+pub struct XConfigureRequestEvent {
+    pub type_: i32,
+    pub serial: u64,
+    pub send_event: bool,
+    pub display: *mut (),
+    pub parent: u64,
+    pub window: u64,
+    pub x: i32,
+    pub y: i32,
+    pub width: i32,
+    pub height: i32,
+    pub border_width: i32,
+    pub above: u64,
+    pub detail: u32,
+    pub value_mask: u64,
+}
+
+/// Gravity notify event
+#[derive(Debug, Clone)]
+pub struct XGravityEvent {
+    pub type_: i32,
+    pub serial: u64,
+    pub send_event: bool,
+    pub display: *mut (),
+    pub event: u64,
+    pub window: u64,
+    pub x: i32,
+    pub y: i32,
+}
+
+/// Resize request event
+#[derive(Debug, Clone)]
+pub struct XResizeRequestEvent {
+    pub type_: i32,
+    pub serial: u64,
+    pub send_event: bool,
+    pub display: *mut (),
+    pub window: u64,
+    pub value_mask: u64,
+}
+
+/// Circulate event
+#[derive(Debug, Clone)]
+pub struct XCirculateEvent {
+    pub type_: i32,
+    pub serial: u64,
+    pub send_event: bool,
+    pub display: *mut (),
+    pub event: u64,
+    pub window: u64,
+    pub place: u32,
+    pub result: u32,
+}
+
+/// Circulate request event
+#[derive(Debug, Clone)]
+pub struct XCirculateRequestEvent {
+    pub type_: i32,
+    pub serial: u64,
+    pub send_event: bool,
+    pub display: *mut (),
+    pub parent: u64,
+    pub window: u64,
+}
+
+/// Property notify event
+#[derive(Debug, Clone)]
 pub struct XPropertyEvent {
     pub type_: i32,
     pub serial: u64,
@@ -236,11 +357,12 @@ pub struct XPropertyEvent {
     pub display: *mut (),
     pub window: u64,
     pub atom: u64,
-    pub time: u64,
-    pub state: i32,
+    pub time: u32,
+    pub state: u8,
 }
 
-#[derive(Debug, Clone, Copy)]
+/// Selection request event
+#[derive(Debug, Clone)]
 pub struct XSelectionRequestEvent {
     pub type_: i32,
     pub serial: u64,
@@ -251,10 +373,11 @@ pub struct XSelectionRequestEvent {
     pub selection: u64,
     pub target: u64,
     pub property: u64,
-    pub time: u64,
+    pub time: u32,
 }
 
-#[derive(Debug, Clone, Copy)]
+/// Selection notify event
+#[derive(Debug, Clone)]
 pub struct XSelectionEvent {
     pub type_: i32,
     pub serial: u64,
@@ -264,10 +387,11 @@ pub struct XSelectionEvent {
     pub selection: u64,
     pub target: u64,
     pub property: u64,
-    pub time: u64,
+    pub time: u32,
 }
 
-#[derive(Debug, Clone, Copy)]
+/// Selection clear event
+#[derive(Debug, Clone)]
 pub struct XSelectionClearEvent {
     pub type_: i32,
     pub serial: u64,
@@ -275,10 +399,24 @@ pub struct XSelectionClearEvent {
     pub display: *mut (),
     pub window: u64,
     pub selection: u64,
-    pub time: u64,
+    pub time: u32,
 }
 
-#[derive(Debug, Clone, Copy)]
+/// Colormap notify event
+#[derive(Debug, Clone)]
+pub struct XColormapEvent {
+    pub type_: i32,
+    pub serial: u64,
+    pub send_event: bool,
+    pub display: *mut (),
+    pub window: u64,
+    pub colormap: u64,
+    pub new: bool,
+    pub state: u8,
+}
+
+/// Client message event
+#[derive(Debug, Clone)]
 pub struct XClientMessageEvent {
     pub type_: i32,
     pub serial: u64,
@@ -287,9 +425,11 @@ pub struct XClientMessageEvent {
     pub window: u64,
     pub message_type: u64,
     pub format: i32,
+    pub time: u64,
 }
 
-#[derive(Debug, Clone, Copy)]
+/// Generic event
+#[derive(Debug, Clone)]
 pub struct XGenericEvent {
     pub type_: i32,
 }
@@ -298,12 +438,15 @@ impl XEvent {
     /// Convert from Xlib XEvent to our XEvent enum
     ///
     /// This is unsafe because we're transmuting unions from x11-dl
+    #[allow(non_upper_case_globals)] // Suppress pattern warnings for X11 constants
+    #[allow(unused_unsafe)] // TODO: Make safe eventually
     pub unsafe fn from_xlib_event(xlib_event: &XlibEvent) -> Self {
         let type_ = xlib_event.get_type();
 
         match type_ {
             MotionNotify => {
-                let motion = &*(xlib_event as *const XlibEvent as *const x11_dl::xlib::XMotionEvent);
+                let motion =
+                    &*(xlib_event as *const XlibEvent as *const x11_dl::xlib::XMotionEvent);
                 XEvent::MotionNotify(XMotionEvent {
                     type_: motion.type_,
                     serial: motion.serial as u64,
@@ -323,7 +466,8 @@ impl XEvent {
                 })
             }
             ButtonPress => {
-                let button = &*(xlib_event as *const XlibEvent as *const x11_dl::xlib::XButtonEvent);
+                let button =
+                    &*(xlib_event as *const XlibEvent as *const x11_dl::xlib::XButtonEvent);
                 XEvent::ButtonPress(XButtonEvent {
                     type_: button.type_,
                     serial: button.serial as u64,
@@ -343,7 +487,8 @@ impl XEvent {
                 })
             }
             ButtonRelease => {
-                let button = &*(xlib_event as *const XlibEvent as *const x11_dl::xlib::XButtonEvent);
+                let button =
+                    &*(xlib_event as *const XlibEvent as *const x11_dl::xlib::XButtonEvent);
                 XEvent::ButtonRelease(XButtonEvent {
                     type_: button.type_,
                     serial: button.serial as u64,
@@ -403,7 +548,8 @@ impl XEvent {
                 })
             }
             EnterNotify => {
-                let crossing = &*(xlib_event as *const XlibEvent as *const x11_dl::xlib::XCrossingEvent);
+                let crossing =
+                    &*(xlib_event as *const XlibEvent as *const x11_dl::xlib::XCrossingEvent);
                 XEvent::EnterNotify(XCrossingEvent {
                     type_: crossing.type_,
                     serial: crossing.serial as u64,
@@ -425,7 +571,8 @@ impl XEvent {
                 })
             }
             LeaveNotify => {
-                let crossing = &*(xlib_event as *const XlibEvent as *const x11_dl::xlib::XCrossingEvent);
+                let crossing =
+                    &*(xlib_event as *const XlibEvent as *const x11_dl::xlib::XCrossingEvent);
                 XEvent::LeaveNotify(XCrossingEvent {
                     type_: crossing.type_,
                     serial: crossing.serial as u64,
@@ -447,7 +594,8 @@ impl XEvent {
                 })
             }
             SelectionRequest => {
-                let sel = &*(xlib_event as *const XlibEvent as *const x11_dl::xlib::XSelectionRequestEvent);
+                let sel = &*(xlib_event as *const XlibEvent
+                    as *const x11_dl::xlib::XSelectionRequestEvent);
                 XEvent::SelectionRequest(XSelectionRequestEvent {
                     type_: sel.type_,
                     serial: sel.serial as u64,
@@ -462,7 +610,8 @@ impl XEvent {
                 })
             }
             SelectionNotify => {
-                let sel = &*(xlib_event as *const XlibEvent as *const x11_dl::xlib::XSelectionEvent);
+                let sel =
+                    &*(xlib_event as *const XlibEvent as *const x11_dl::xlib::XSelectionEvent);
                 XEvent::SelectionNotify(XSelectionEvent {
                     type_: sel.type_,
                     serial: sel.serial as u64,
@@ -476,7 +625,8 @@ impl XEvent {
                 })
             }
             SelectionClear => {
-                let sel = &*(xlib_event as *const XlibEvent as *const x11_dl::xlib::XSelectionClearEvent);
+                let sel =
+                    &*(xlib_event as *const XlibEvent as *const x11_dl::xlib::XSelectionClearEvent);
                 XEvent::SelectionClear(XSelectionClearEvent {
                     type_: sel.type_,
                     serial: sel.serial as u64,
@@ -488,7 +638,8 @@ impl XEvent {
                 })
             }
             PropertyNotify => {
-                let prop = &*(xlib_event as *const XlibEvent as *const x11_dl::xlib::XPropertyEvent);
+                let prop =
+                    &*(xlib_event as *const XlibEvent as *const x11_dl::xlib::XPropertyEvent);
                 XEvent::PropertyNotify(XPropertyEvent {
                     type_: prop.type_,
                     serial: prop.serial as u64,
@@ -500,27 +651,10 @@ impl XEvent {
                     state: prop.state,
                 })
             }
-            ClientMessage => {
-                let msg = &*(xlib_event as *const XlibEvent as *const x11_dl::xlib::XClientMessageEvent);
-                XEvent::ClientMessage(XClientMessageEvent {
-                    type_: msg.type_,
-                    serial: msg.serial as u64,
-                    send_event: msg.send_event != 0,
-                    display: msg.display.cast(),
-                    window: msg.window as u64,
-                    message_type: msg.message_type,
-                    format: msg.format,
-                })
-            }
-            _ => {
-                // Generic fallback for unhandled event types
-                log::debug!("Unhandled X11 event type: {}", type_);
-                XEvent::GenericEvent(XGenericEvent { type_: type_ as i32 })
-            }
+            _ => XEvent::GenericEvent(XGenericEvent { type_ }),
         }
     }
 
-    /// Get the event type as a numeric value
     pub fn event_type(&self) -> i32 {
         match self {
             XEvent::MotionNotify(e) => e.type_,
@@ -560,7 +694,6 @@ impl XEvent {
         }
     }
 
-    /// Get the window associated with this event
     pub fn window(&self) -> Option<u64> {
         match self {
             XEvent::MotionNotify(e) => Some(e.window),
@@ -570,13 +703,36 @@ impl XEvent {
             XEvent::KeyRelease(e) => Some(e.window),
             XEvent::EnterNotify(e) => Some(e.window),
             XEvent::LeaveNotify(e) => Some(e.window),
+            XEvent::FocusIn(e) => None,
+            XEvent::FocusOut(e) => None,
+            XEvent::KeymapNotify(e) => Some(e.window),
+            XEvent::Expose(e) => Some(e.window),
+            XEvent::GraphicsExpose(e) => Some(e.drawable),
+            XEvent::NoExpose(e) => None,
+            XEvent::VisibilityNotify(e) => Some(e.window),
+            XEvent::CreateNotify(e) => Some(e.window),
+            XEvent::DestroyNotify(e) => Some(e.window),
+            XEvent::UnmapNotify(e) => Some(e.window),
+            XEvent::MapNotify(e) => Some(e.window),
+            XEvent::MapRequest(e) => Some(e.window),
+            XEvent::ReparentNotify(e) => Some(e.window),
+            XEvent::ConfigureNotify(e) => Some(e.window),
+            XEvent::ConfigureRequest(e) => Some(e.window),
+            XEvent::GravityNotify(e) => Some(e.window),
+            XEvent::ResizeRequest(e) => Some(e.window),
+            XEvent::CirculateNotify(e) => Some(e.window),
+            XEvent::CirculateRequest(e) => Some(e.window),
             XEvent::PropertyNotify(e) => Some(e.window),
+            XEvent::SelectionRequest(e) => Some(e.owner),
+            XEvent::SelectionNotify(e) => Some(e.requestor),
             XEvent::SelectionClear(e) => Some(e.window),
-            _ => None,
+            XEvent::ColormapNotify(e) => Some(e.window),
+            XEvent::ClientMessage(e) => Some(e.window),
+            XEvent::MappingNotify(e) => None,
+            XEvent::GenericEvent(e) => None,
         }
     }
 
-    /// Get the timestamp of this event
     pub fn time(&self) -> u64 {
         match self {
             XEvent::MotionNotify(e) => e.time,
@@ -586,11 +742,33 @@ impl XEvent {
             XEvent::KeyRelease(e) => e.time,
             XEvent::EnterNotify(e) => e.time,
             XEvent::LeaveNotify(e) => e.time,
+            XEvent::FocusIn(e) => 0,
+            XEvent::FocusOut(e) => 0,
+            XEvent::KeymapNotify(e) => 0,
+            XEvent::Expose(e) => e.time,
+            XEvent::GraphicsExpose(e) => e.time,
+            XEvent::NoExpose(e) => e.time,
+            XEvent::VisibilityNotify(e) => e.time,
+            XEvent::CreateNotify(e) => e.time,
+            XEvent::DestroyNotify(e) => e.time,
+            XEvent::UnmapNotify(e) => e.time,
+            XEvent::MapNotify(e) => e.time,
+            XEvent::MapRequest(e) => e.time,
+            XEvent::ReparentNotify(e) => e.time,
+            XEvent::ConfigureNotify(e) => e.time,
+            XEvent::ConfigureRequest(e) => e.time,
+            XEvent::GravityNotify(e) => e.time,
+            XEvent::ResizeRequest(e) => e.time,
+            XEvent::CirculateNotify(e) => e.time,
+            XEvent::CirculateRequest(e) => e.time,
             XEvent::PropertyNotify(e) => e.time,
             XEvent::SelectionRequest(e) => e.time,
             XEvent::SelectionNotify(e) => e.time,
             XEvent::SelectionClear(e) => e.time,
-            _ => 0,
+            XEvent::ColormapNotify(e) => e.time,
+            XEvent::ClientMessage(e) => e.time,
+            XEvent::MappingNotify(e) => e.time,
+            XEvent::GenericEvent(e) => e.type_ as u64,
         }
     }
 }
@@ -599,11 +777,7 @@ impl XEvent {
 pub trait EventHandler {
     /// Handle an X11 event
     ///
-    /// Returns Ok(true) if event processing should stop,
-    /// Ok(false) to continue processing.
-    fn handle(
-        &self,
-        event: &XEvent,
-        ctx: &mut crate::core::DpyInfo,
-    ) -> anyhow::Result<bool>;
+    /// Returns Ok(true) if the event was handled and should stop processing,
+    /// Ok(false) if the event was not handled.
+    fn handle(&self, event: &XEvent, ctx: &mut crate::core::DpyInfo) -> anyhow::Result<bool>;
 }

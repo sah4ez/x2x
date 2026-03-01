@@ -1,13 +1,13 @@
 //! Keyboard input handling
 
-use log::{info, warn, debug};
-use crate::x11::event::{XEvent, XKeyEvent};
-use crate::x11::X11Connection;
-use crate::x11::extension::XTestExtension;
 use crate::core::DpyInfo;
 use crate::core::StickyKeys;
 use crate::input::InputHandler;
+use crate::x11::event::{XEvent, XKeyEvent};
+use crate::x11::extension::XTestExtension;
+use crate::x11::X11Connection;
 use anyhow::Result;
+use log::{debug, info, warn};
 
 /// Keyboard event handler
 ///

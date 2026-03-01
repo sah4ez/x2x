@@ -57,7 +57,9 @@ impl FakeManager {
         };
 
         match event {
-            FakeEvent::Key { keycode, is_press, .. } => {
+            FakeEvent::Key {
+                keycode, is_press, ..
+            } => {
                 xtest.fake_key(&self.conn, *keycode, *is_press)?;
             }
             FakeEvent::Button { button, is_press } => {

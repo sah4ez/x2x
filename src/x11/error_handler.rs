@@ -1,7 +1,7 @@
 //! X11 error handling
 
 use crate::x11::X11Error;
-use log::{error, warn, debug};
+use log::{debug, error, warn};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
 use x11_dl::xlib::{XErrorEvent, XErrorEvent as XlibXErrorEvent};
@@ -209,7 +209,7 @@ mod tests {
     #[test]
     fn test_error_info_bad_window() {
         let info = X11ErrorInfo {
-            error_code: 3, // BadWindow
+            error_code: 3,   // BadWindow
             request_code: 4, // DestroyWindow
             minor_code: 0,
             resource_id: 0x12345678,

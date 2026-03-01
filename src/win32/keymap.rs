@@ -29,11 +29,7 @@ impl Win32KeyMap {
     }
 
     /// Map a Windows virtual key to X KeySym(s)
-    pub fn map_virtual_key(
-        &self,
-        vk: u32,
-        key_data: u32,
-    ) -> crate::win32::KeyAction {
+    pub fn map_virtual_key(&self, vk: u32, key_data: u32) -> crate::win32::KeyAction {
         // TODO: Implement PCtoX logic from keymap.c
         // This returns a KeyAction with keysyms and modifier flags
         crate::win32::KeyAction {

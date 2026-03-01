@@ -49,20 +49,10 @@ impl CoordinateMapping {
         // Build tables based on layout mode
         match mode {
             LayoutMode::Horizontal { direction } => {
-                Self::build_horizontal_tables(
-                    from_screen,
-                    to_screens,
-                    direction,
-                    &mut x_tables,
-                )?;
+                Self::build_horizontal_tables(from_screen, to_screens, direction, &mut x_tables)?;
             }
             LayoutMode::Vertical { direction } => {
-                Self::build_vertical_tables(
-                    from_screen,
-                    to_screens,
-                    direction,
-                    &mut y_tables,
-                )?;
+                Self::build_vertical_tables(from_screen, to_screens, direction, &mut y_tables)?;
             }
         }
 
@@ -194,7 +184,8 @@ impl CoordinateMapping {
             return crate::core::COORD_INCR as i32;
         }
 
-        let coord = self.x_tables
+        let coord = self
+            .x_tables
             .get(to_screen)
             .and_then(|table| table.get(from_x as usize))
             .copied()
@@ -214,7 +205,8 @@ impl CoordinateMapping {
             return crate::core::COORD_INCR as i32;
         }
 
-        let coord = self.y_tables
+        let coord = self
+            .y_tables
             .get(to_screen)
             .and_then(|table| table.get(from_y as usize))
             .copied()
@@ -230,16 +222,12 @@ impl CoordinateMapping {
 
     /// Get screen width for a target display
     pub fn to_screen_width(&self, to_screen: usize) -> Option<u32> {
-        self.x_tables
-            .get(to_screen)
-            .map(|table| table.len() as u32)
+        self.x_tables.get(to_screen).map(|table| table.len() as u32)
     }
 
     /// Get screen height for a target display
     pub fn to_screen_height(&self, to_screen: usize) -> Option<u32> {
-        self.y_tables
-            .get(to_screen)
-            .map(|table| table.len() as u32)
+        self.y_tables.get(to_screen).map(|table| table.len() as u32)
     }
 }
 
@@ -262,8 +250,8 @@ pub enum Direction {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::COORD_INCR;
     use crate::core::COORD_DECR;
+    use crate::core::COORD_INCR;
 
     #[test]
     fn test_direction_roundtrip() {
@@ -278,16 +266,22 @@ mod tests {
         let horizontal = LayoutMode::Horizontal {
             direction: Direction::Right,
         };
-        assert_eq!(horizontal, LayoutMode::Horizontal {
-            direction: Direction::Right,
-        });
+        assert_eq!(
+            horizontal,
+            LayoutMode::Horizontal {
+                direction: Direction::Right,
+            }
+        );
 
         let vertical = LayoutMode::Vertical {
             direction: Direction::Up,
         };
-        assert_eq!(vertical, LayoutMode::Vertical {
-            direction: Direction::Up,
-        });
+        assert_eq!(
+            vertical,
+            LayoutMode::Vertical {
+                direction: Direction::Up,
+            }
+        );
     }
 
     #[test]
@@ -305,7 +299,8 @@ mod tests {
             LayoutMode::Horizontal {
                 direction: Direction::Right,
             },
-        ).unwrap();
+        )
+        .unwrap();
 
         assert!(mapping.is_special(COORD_INCR as i32));
         assert!(mapping.is_special(COORD_DECR as i32));
@@ -322,9 +317,14 @@ mod tests {
         };
         let to_screens: Vec<ScreenInfo> = vec![];
 
-        let mapping = CoordinateMapping::new(&from_screen, &to_screens, LayoutMode::Horizontal {
-            direction: Direction::Right,
-        }).unwrap();
+        let mapping = CoordinateMapping::new(
+            &from_screen,
+            &to_screens,
+            LayoutMode::Horizontal {
+                direction: Direction::Right,
+            },
+        )
+        .unwrap();
 
         assert_eq!(mapping.n_screens, 0);
         assert_eq!(mapping.x_tables.len(), 0);
@@ -346,7 +346,8 @@ mod tests {
             LayoutMode::Horizontal {
                 direction: Direction::Right,
             },
-        ).unwrap();
+        )
+        .unwrap();
 
         // Test out-of-bounds coordinates
         let result = mapping.map_x(-1, 0);
@@ -371,7 +372,8 @@ mod tests {
             LayoutMode::Vertical {
                 direction: Direction::Up,
             },
-        ).unwrap();
+        )
+        .unwrap();
 
         // Test out-of-bounds coordinates
         let result = mapping.map_y(-1, 0);

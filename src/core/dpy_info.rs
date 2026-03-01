@@ -1,7 +1,7 @@
 //! Display information structures
 
-use crate::x11::{X11Connection, SelectionState};
 use crate::core::{FakeQueue, StickyKeys};
+use crate::x11::{SelectionState, X11Connection};
 use anyhow::Result;
 use std::collections::VecDeque;
 use std::sync::Arc;
@@ -14,8 +14,8 @@ pub struct DpyInfo {
     // From display (source)
     pub from_conn: Arc<X11Connection>,
     pub from_root: u64,
-    pub from_trigger: Option<u64>,     // Trigger window on screen edge
-    pub from_big: Option<u64>,         // Status window
+    pub from_trigger: Option<u64>, // Trigger window on screen edge
+    pub from_big: Option<u64>,     // Status window
     pub from_screen_info: crate::x11::ScreenInfo,
 
     // To display (target)
@@ -25,15 +25,15 @@ pub struct DpyInfo {
 
     // Connection state
     pub mode: ConnectionMode,
-    pub to_screen: usize,              // Which screen on to display
-    pub last_from_coord: i32,          // Last coordinate from source
-    pub unreasonable_delta: i32,        // Threshold for "unusual" movement
+    pub to_screen: usize,        // Which screen on to display
+    pub last_from_coord: i32,    // Last coordinate from source
+    pub unreasonable_delta: i32, // Threshold for "unusual" movement
 
     // Coordinate mapping
-    pub x_tables: Vec<Vec<i16>>,        // X coordinate transformation tables
-    pub y_tables: Vec<Vec<i16>>,        // Y coordinate transformation tables
-    pub from_conn_coord: i32,           // Connection coordinate on from display
-    pub from_disc_coord: i32,           // Disconnect coordinate on from display
+    pub x_tables: Vec<Vec<i16>>, // X coordinate transformation tables
+    pub y_tables: Vec<Vec<i16>>, // Y coordinate transformation tables
+    pub from_conn_coord: i32,    // Connection coordinate on from display
+    pub from_disc_coord: i32,    // Disconnect coordinate on from display
 
     // Selection state (clipboard)
     pub selection_state: SelectionState,
@@ -48,15 +48,12 @@ pub struct DpyInfo {
     pub current_y: i32,
 
     // Button state
-    pub button_state: u32,              // X button mask
+    pub button_state: u32, // X button mask
 }
 
 impl DpyInfo {
     /// Create a new DpyInfo structure
-    pub fn new(
-        from_conn: Arc<X11Connection>,
-        to_conn: Arc<X11Connection>,
-    ) -> Result<Self> {
+    pub fn new(from_conn: Arc<X11Connection>, to_conn: Arc<X11Connection>) -> Result<Self> {
         let from_root = from_conn.root_window();
         let to_root = to_conn.root_window();
 
@@ -195,10 +192,7 @@ pub struct ShadowDisplay {
 
 impl ShadowDisplay {
     /// Create a new shadow display
-    pub fn new(
-        name: String,
-        conn: Arc<X11Connection>,
-    ) -> Self {
+    pub fn new(name: String, conn: Arc<X11Connection>) -> Self {
         Self {
             name,
             conn,

@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 //! x2x-rust: Control X displays with shared keyboard/mouse
 //!
 //! This is a Rust rewrite of the original x2x utility (C implementation).
@@ -18,12 +19,12 @@
 //! - **utils**: Error handling, configuration, and utilities
 //! - **win32**: Windows/Cygwin support (optional, behind `win32` feature)
 
-mod x11;
+mod clipboard;
+mod connection;
 mod core;
 mod input;
-mod clipboard;
 mod utils;
-mod connection;
+mod x11;
 
 #[cfg(feature = "win32")]
 mod win32;
@@ -32,15 +33,14 @@ use anyhow::{Context, Result};
 use clap::Parser;
 use log::{debug, error, info, warn};
 
-use utils::config::Config;
-use x11::{X11Connection, setup_error_handler, X11Clipboard};
-use x11::extension::{XTestExtension, DpmsExtension};
 use core::DpyInfo;
+use utils::config::Config;
+use x11::extension::{DpmsExtension, XTestExtension};
+use x11::{setup_error_handler, X11Clipboard, X11Connection};
 
 fn main() -> Result<()> {
     // Initialize logger
-    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info"))
-        .init();
+    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
 
     // Setup X11 error handler
     if let Err(e) = setup_error_handler() {
@@ -58,7 +58,10 @@ fn main() -> Result<()> {
     let from_display_name = config.from_display_name().unwrap_or(":0");
     let to_display_name = config.to_display_name();
 
-    info!("Opening connections: {} -> {}", from_display_name, to_display_name);
+    info!(
+        "Opening connections: {} -> {}",
+        from_display_name, to_display_name
+    );
 
     let from_conn = X11Connection::open(Some(from_display_name))
         .with_context(|| format!("Failed to open display: {}", from_display_name))?;
@@ -72,8 +75,14 @@ fn main() -> Result<()> {
     let from_screen_info = from_conn.current_screen_info()?;
     let to_screen_info = to_conn.current_screen_info()?;
 
-    info!("From display: {}x{}", from_screen_info.width, from_screen_info.height);
-    info!("To display: {}x{}", to_screen_info.width, to_screen_info.height);
+    info!(
+        "From display: {}x{}",
+        from_screen_info.width, from_screen_info.height
+    );
+    info!(
+        "To display: {}x{}",
+        to_screen_info.width, to_screen_info.height
+    );
 
     // Check for XTest extension (critical for x2x)
     let xtest = XTestExtension::from_connection(&from_conn);
@@ -103,7 +112,7 @@ fn main() -> Result<()> {
     let from_conn_arc = std::sync::Arc::new(from_conn);
     let to_conn_arc = std::sync::Arc::new(to_conn);
 
-    let mut dpy_info = DpyInfo::new(from_conn_arc, to_conn_arc)?;
+    let dpy_info = DpyInfo::new(from_conn_arc, to_conn_arc)?;
 
     info!("Display info initialized");
 
@@ -112,11 +121,7 @@ fn main() -> Result<()> {
     let prop_window = dpy_info.from_root;
     let ping_atom = 12345; // TODO: Get proper atom in Phase 7
 
-    let _clipboard = X11Clipboard::new(
-        dpy_info.from_conn.clone(),
-        prop_window,
-        ping_atom,
-    )?;
+    let _clipboard = X11Clipboard::new(dpy_info.from_conn.clone(), prop_window, ping_atom)?;
 
     info!("Clipboard initialized");
 

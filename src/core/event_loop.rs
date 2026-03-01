@@ -1,8 +1,8 @@
 //! Event loop implementation with select/poll
 
-use crate::x11::X11Connection;
-use crate::x11::event::{XEvent, EventHandler};
 use crate::core::DpyInfo;
+use crate::x11::event::{EventHandler, XEvent};
+use crate::x11::X11Connection;
 use anyhow::{Context, Result};
 use log::{debug, error, info, warn};
 use std::sync::Arc;
@@ -18,10 +18,7 @@ pub struct EventLoop {
 
 impl EventLoop {
     /// Create a new event loop
-    pub fn new(
-        from_conn: Arc<X11Connection>,
-        to_conn: Arc<X11Connection>,
-    ) -> Self {
+    pub fn new(from_conn: Arc<X11Connection>, to_conn: Arc<X11Connection>) -> Self {
         Self {
             from_conn,
             to_conn,
@@ -71,11 +68,7 @@ impl EventLoop {
     }
 
     /// Handle an event
-    fn handle_event(
-        &self,
-        event: &XEvent,
-        ctx: &mut DpyInfo,
-    ) -> Result<bool> {
+    fn handle_event(&self, event: &XEvent, ctx: &mut DpyInfo) -> Result<bool> {
         for handler in &self.handlers {
             match handler.handle(event, ctx) {
                 Ok(true) => {

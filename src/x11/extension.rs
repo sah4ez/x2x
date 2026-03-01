@@ -2,7 +2,7 @@
 
 use crate::x11::{X11Connection, X11Error};
 use anyhow::{Context, Result};
-use log::{info, warn, debug, error};
+use log::{debug, error, info, warn};
 use std::os::raw::{c_int, c_uint, c_ulong};
 
 use x11_dl::xlib;
@@ -39,13 +39,7 @@ impl XTestExtension {
     /// Fake a mouse motion event
     ///
     /// Moves the pointer to the specified screen-relative coordinates.
-    pub fn fake_motion(
-        &self,
-        conn: &X11Connection,
-        _screen: i32,
-        x: i32,
-        y: i32,
-    ) -> Result<()> {
+    pub fn fake_motion(&self, conn: &X11Connection, _screen: i32, x: i32, y: i32) -> Result<()> {
         if !self.available {
             return Err(X11Error::XTestNotAvailable.into());
         }
@@ -77,12 +71,7 @@ impl XTestExtension {
     /// Fake a button press/release event
     ///
     /// Simulates a mouse button press or release.
-    pub fn fake_button(
-        &self,
-        _conn: &X11Connection,
-        _button: u32,
-        _is_press: bool,
-    ) -> Result<()> {
+    pub fn fake_button(&self, _conn: &X11Connection, _button: u32, _is_press: bool) -> Result<()> {
         if !self.available {
             return Err(X11Error::XTestNotAvailable.into());
         }
@@ -95,12 +84,7 @@ impl XTestExtension {
     /// Fake a key press/release event
     ///
     /// Simulates a keyboard key press or release.
-    pub fn fake_key(
-        &self,
-        _conn: &X11Connection,
-        keycode: u8,
-        _is_press: bool,
-    ) -> Result<()> {
+    pub fn fake_key(&self, _conn: &X11Connection, _keycode: u8, _is_press: bool) -> Result<()> {
         if !self.available {
             return Err(X11Error::XTestNotAvailable.into());
         }
@@ -114,11 +98,7 @@ impl XTestExtension {
     ///
     /// Prevents other clients from receiving keyboard/mouse input.
     /// This is useful when redirecting input to another display.
-    pub fn grab_control(
-        &self,
-        conn: &X11Connection,
-        screen: i32,
-    ) -> Result<()> {
+    pub fn grab_control(&self, conn: &X11Connection, screen: i32) -> Result<()> {
         if !self.available {
             return Err(X11Error::XTestNotAvailable.into());
         }
@@ -170,11 +150,7 @@ impl XTestExtension {
     /// Release control of input devices
     ///
     /// Restores normal input handling.
-    pub fn release_control(
-        &self,
-        conn: &X11Connection,
-        _screen: i32,
-    ) -> Result<()> {
+    pub fn release_control(&self, conn: &X11Connection, _screen: i32) -> Result<()> {
         if !self.available {
             return Err(X11Error::XTestNotAvailable.into());
         }
@@ -225,11 +201,7 @@ impl DpmsExtension {
     }
 
     /// Enable or disable DPMS
-    pub fn set_enabled(
-        &self,
-        _conn: &X11Connection,
-        _enable: bool,
-    ) -> Result<()> {
+    pub fn set_enabled(&self, _conn: &X11Connection, _enable: bool) -> Result<()> {
         warn!("DPMS: set_enabled not yet implemented");
         Ok(())
     }
@@ -237,11 +209,7 @@ impl DpmsExtension {
     /// Force DPMS to a specific level
     ///
     /// Immediately puts the display into the specified power state.
-    pub fn force_level(
-        &self,
-        _conn: &X11Connection,
-        _level: DpmsLevel,
-    ) -> Result<()> {
+    pub fn force_level(&self, _conn: &X11Connection, _level: DpmsLevel) -> Result<()> {
         warn!("DPMS: force_level not yet implemented");
         Ok(())
     }
