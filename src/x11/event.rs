@@ -638,7 +638,8 @@ impl XEvent {
                 })
             }
             PropertyNotify => {
-                let prop = &*(xlib_event as *const XlibEvent as *const x11_dl::xlib::XPropertyEvent);
+                let prop =
+                    &*(xlib_event as *const XlibEvent as *const x11_dl::xlib::XPropertyEvent);
                 XEvent::PropertyNotify(XPropertyEvent {
                     type_: prop.type_,
                     serial: prop.serial as u64,

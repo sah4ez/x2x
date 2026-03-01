@@ -1,7 +1,7 @@
 //! Integration tests for x2x-rust
 
-use crate::x11::event::XEvent;
 use crate::core::dpy_info::DpyInfo;
+use crate::x11::event::XEvent;
 
 #[cfg(test)]
 mod integration_tests {
