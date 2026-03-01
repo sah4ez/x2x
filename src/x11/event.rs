@@ -6,7 +6,8 @@ use std::mem;
 #[allow(unused_imports)]
 use x11_dl::xlib::{
     ButtonPress, ButtonRelease, ClientMessage, EnterNotify, KeyPress, KeyRelease, LeaveNotify,
-    MotionNotify, PropertyNotify, SelectionClear, SelectionNotify, SelectionRequest,
+    MappingNotify, MotionNotify, NoExpose, PropertyNotify, SelectionClear, SelectionNotify, SelectionRequest,
+    XMappingEvent, XNoExposeEvent,
 };
 use x11_dl::xlib::{XAnyEvent, XEvent as XlibEvent};
 
@@ -460,8 +461,8 @@ impl XEvent {
                     y: motion.y as i32,
                     x_root: motion.x_root as i32,
                     y_root: motion.y_root as i32,
-                    state: motion.state,
-                    is_hint: motion.is_hint,
+                    state: motion.state as u8,
+                    is_hint: motion.is_hint != 0,
                     same_screen: motion.same_screen != 0,
                 })
             }
@@ -481,7 +482,7 @@ impl XEvent {
                     y: button.y as i32,
                     x_root: button.x_root as i32,
                     y_root: button.y_root as i32,
-                    state: button.state,
+                    state: button.state as u8,
                     button: button.button as u32,
                     same_screen: button.same_screen != 0,
                 })
@@ -502,7 +503,7 @@ impl XEvent {
                     y: button.y as i32,
                     x_root: button.x_root as i32,
                     y_root: button.y_root as i32,
-                    state: button.state,
+                    state: button.state as u8,
                     button: button.button as u32,
                     same_screen: button.same_screen != 0,
                 })
@@ -522,8 +523,8 @@ impl XEvent {
                     y: key.y as i32,
                     x_root: key.x_root as i32,
                     y_root: key.y_root as i32,
-                    state: key.state,
-                    keycode: key.keycode,
+                    state: key.state as u8,
+                    keycode: key.keycode as u8,
                     same_screen: key.same_screen != 0,
                 })
             }
@@ -542,8 +543,8 @@ impl XEvent {
                     y: key.y as i32,
                     x_root: key.x_root as i32,
                     y_root: key.y_root as i32,
-                    state: key.state,
-                    keycode: key.keycode,
+                    state: key.state as u8,
+                    keycode: key.keycode as u8,
                     same_screen: key.same_screen != 0,
                 })
             }
@@ -563,11 +564,11 @@ impl XEvent {
                     y: crossing.y as i32,
                     x_root: crossing.x_root as i32,
                     y_root: crossing.y_root as i32,
-                    mode: crossing.mode,
-                    detail: crossing.detail,
+                    mode: crossing.mode as u8,
+                    detail: crossing.detail as u32,
                     same_screen: crossing.same_screen != 0,
                     focus: crossing.focus != 0,
-                    state: crossing.state,
+                    state: crossing.state as u8,
                 })
             }
             LeaveNotify => {
@@ -586,11 +587,11 @@ impl XEvent {
                     y: crossing.y as i32,
                     x_root: crossing.x_root as i32,
                     y_root: crossing.y_root as i32,
-                    mode: crossing.mode,
-                    detail: crossing.detail,
+                    mode: crossing.mode as u8,
+                    detail: crossing.detail as u32,
                     same_screen: crossing.same_screen != 0,
                     focus: crossing.focus != 0,
-                    state: crossing.state,
+                    state: crossing.state as u8,
                 })
             }
             SelectionRequest => {
@@ -606,7 +607,7 @@ impl XEvent {
                     selection: sel.selection,
                     target: sel.target,
                     property: sel.property,
-                    time: sel.time,
+                    time: sel.time as u32,
                 })
             }
             SelectionNotify => {
@@ -621,7 +622,7 @@ impl XEvent {
                     selection: sel.selection,
                     target: sel.target,
                     property: sel.property,
-                    time: sel.time,
+                    time: sel.time as u32,
                 })
             }
             SelectionClear => {
@@ -634,7 +635,7 @@ impl XEvent {
                     display: sel.display.cast(),
                     window: sel.window as u64,
                     selection: sel.selection,
-                    time: sel.time,
+                    time: sel.time as u32,
                 })
             }
             PropertyNotify => {
@@ -647,8 +648,8 @@ impl XEvent {
                     display: prop.display.cast(),
                     window: prop.window as u64,
                     atom: prop.atom,
-                    time: prop.time,
-                    state: prop.state,
+                    time: prop.time as u32,
+                    state: prop.state as u8,
                 })
             }
             _ => XEvent::GenericEvent(XGenericEvent { type_ }),
@@ -742,32 +743,32 @@ impl XEvent {
             XEvent::KeyRelease(e) => e.time,
             XEvent::EnterNotify(e) => e.time,
             XEvent::LeaveNotify(e) => e.time,
-            XEvent::FocusIn(e) => 0,
-            XEvent::FocusOut(e) => 0,
-            XEvent::KeymapNotify(e) => 0,
-            XEvent::Expose(e) => e.time,
-            XEvent::GraphicsExpose(e) => e.time,
-            XEvent::NoExpose(e) => e.time,
-            XEvent::VisibilityNotify(e) => e.time,
-            XEvent::CreateNotify(e) => e.time,
-            XEvent::DestroyNotify(e) => e.time,
-            XEvent::UnmapNotify(e) => e.time,
-            XEvent::MapNotify(e) => e.time,
-            XEvent::MapRequest(e) => e.time,
-            XEvent::ReparentNotify(e) => e.time,
-            XEvent::ConfigureNotify(e) => e.time,
-            XEvent::ConfigureRequest(e) => e.time,
-            XEvent::GravityNotify(e) => e.time,
-            XEvent::ResizeRequest(e) => e.time,
-            XEvent::CirculateNotify(e) => e.time,
-            XEvent::CirculateRequest(e) => e.time,
-            XEvent::PropertyNotify(e) => e.time,
-            XEvent::SelectionRequest(e) => e.time,
-            XEvent::SelectionNotify(e) => e.time,
-            XEvent::SelectionClear(e) => e.time,
-            XEvent::ColormapNotify(e) => e.time,
+            XEvent::FocusIn(_) => 0,
+            XEvent::FocusOut(_) => 0,
+            XEvent::KeymapNotify(_) => 0,
+            XEvent::Expose(_) => 0,
+            XEvent::GraphicsExpose(_) => 0,
+            XEvent::NoExpose(_) => 0,
+            XEvent::VisibilityNotify(_) => 0,
+            XEvent::CreateNotify(_) => 0,
+            XEvent::DestroyNotify(_) => 0,
+            XEvent::UnmapNotify(_) => 0,
+            XEvent::MapNotify(_) => 0,
+            XEvent::MapRequest(_) => 0,
+            XEvent::ReparentNotify(_) => 0,
+            XEvent::ConfigureNotify(_) => 0,
+            XEvent::ConfigureRequest(_) => 0,
+            XEvent::GravityNotify(_) => 0,
+            XEvent::ResizeRequest(_) => 0,
+            XEvent::CirculateNotify(_) => 0,
+            XEvent::CirculateRequest(_) => 0,
+            XEvent::PropertyNotify(e) => e.time as u64,
+            XEvent::SelectionRequest(e) => e.time as u64,
+            XEvent::SelectionNotify(e) => e.time as u64,
+            XEvent::SelectionClear(e) => e.time as u64,
+            XEvent::ColormapNotify(_) => 0,
             XEvent::ClientMessage(e) => e.time,
-            XEvent::MappingNotify(e) => e.time,
+            XEvent::MappingNotify(_) => 0,
             XEvent::GenericEvent(e) => e.type_ as u64,
         }
     }
