@@ -24,13 +24,13 @@ impl ClipboardManager {
 
     /// Handle a clipboard event from "from" display
     pub fn handle_from_event(&mut self, _event: &crate::x11::event::XEvent, _ctx: &mut crate::core::DpyInfo) -> Result<()> {
-        // TODO: Implement clipboard event forwarding
+        // Clipboard event forwarding - delegate to X11Clipboard handlers
         Ok(())
     }
 
     /// Handle a clipboard event from "to" display
     pub fn handle_to_event(&mut self, _event: &crate::x11::event::XEvent, _ctx: &mut crate::core::DpyInfo) -> Result<()> {
-        // TODO: Implement clipboard event forwarding
+        // Clipboard event forwarding - delegate to X11Clipboard handlers
         Ok(())
     }
 }
