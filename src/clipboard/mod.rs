@@ -1,6 +1,6 @@
 //! Clipboard manager for inter-display sharing
 
-use crate::x11::{X11Connection, X11Clipboard, Selection, ClipboardTarget};
+use crate::x11::{ClipboardTarget, Selection, X11Clipboard, X11Connection};
 use anyhow::Result;
 
 /// Clipboard manager for inter-display sharing
@@ -34,17 +34,9 @@ impl ClipboardManager {
         prop_window_to: u64,
         ping_atom: u32,
     ) -> Result<Self> {
-        let from_clipboard = X11Clipboard::new(
-            from_conn,
-            prop_window_from,
-            ping_atom,
-        )?;
+        let from_clipboard = X11Clipboard::new(from_conn, prop_window_from, ping_atom)?;
 
-        let to_clipboard = X11Clipboard::new(
-            to_conn,
-            prop_window_to,
-            ping_atom,
-        )?;
+        let to_clipboard = X11Clipboard::new(to_conn, prop_window_to, ping_atom)?;
 
         log::info!("ClipboardManager created");
 
@@ -199,7 +191,8 @@ impl ClipboardManager {
     /// Sync clipboard data from "from" to "to" display
     pub fn sync_from_to(&mut self) -> Result<()> {
         if let Some(data) = self.from_clipboard.get_data(Selection::Primary) {
-            self.to_clipboard.set_data(Selection::Primary, data, ClipboardTarget::Utf8String)?;
+            self.to_clipboard
+                .set_data(Selection::Primary, data, ClipboardTarget::Utf8String)?;
             self.last_from_data = self.from_clipboard.get_data(Selection::Primary);
             log::info!("Synced clipboard from 'from' to 'to' display");
         }
@@ -210,7 +203,8 @@ impl ClipboardManager {
     /// Sync clipboard data from "to" to "from" display
     pub fn sync_to_from(&mut self) -> Result<()> {
         if let Some(data) = self.to_clipboard.get_data(Selection::Primary) {
-            self.from_clipboard.set_data(Selection::Primary, data, ClipboardTarget::Utf8String)?;
+            self.from_clipboard
+                .set_data(Selection::Primary, data, ClipboardTarget::Utf8String)?;
             self.last_to_data = self.to_clipboard.get_data(Selection::Primary);
             log::info!("Synced clipboard from 'to' to 'from' display");
         }
@@ -229,12 +223,22 @@ impl ClipboardManager {
     }
 
     /// Set clipboard data on "from" display
-    pub fn set_from_data(&self, selection: Selection, data: Vec<u8>, format: ClipboardTarget) -> Result<()> {
+    pub fn set_from_data(
+        &self,
+        selection: Selection,
+        data: Vec<u8>,
+        format: ClipboardTarget,
+    ) -> Result<()> {
         self.from_clipboard.set_data(selection, data, format)
     }
 
     /// Set clipboard data on "to" display
-    pub fn set_to_data(&self, selection: Selection, data: Vec<u8>, format: ClipboardTarget) -> Result<()> {
+    pub fn set_to_data(
+        &self,
+        selection: Selection,
+        data: Vec<u8>,
+        format: ClipboardTarget,
+    ) -> Result<()> {
         self.to_clipboard.set_data(selection, data, format)
     }
 }

@@ -1,11 +1,12 @@
 //! X11 event handling
 
-use crate::x11::{Window, Atom, Time};
-use x11_dl::xlib::{XEvent as XlibEvent, XAnyEvent};
-use x11_dl::xlib::{MotionNotify, ButtonPress, ButtonRelease, KeyPress, KeyRelease,
-                      EnterNotify, LeaveNotify, SelectionRequest, SelectionNotify,
-                      SelectionClear, PropertyNotify, ClientMessage};
+use crate::x11::{Atom, Time, Window};
 use std::mem;
+use x11_dl::xlib::{
+    ButtonPress, ButtonRelease, ClientMessage, EnterNotify, KeyPress, KeyRelease, LeaveNotify,
+    MotionNotify, PropertyNotify, SelectionClear, SelectionNotify, SelectionRequest,
+};
+use x11_dl::xlib::{XAnyEvent, XEvent as XlibEvent};
 
 /// X11 event types
 #[derive(Debug, Clone)]
@@ -303,7 +304,8 @@ impl XEvent {
 
         match type_ {
             MotionNotify => {
-                let motion = &*(xlib_event as *const XlibEvent as *const x11_dl::xlib::XMotionEvent);
+                let motion =
+                    &*(xlib_event as *const XlibEvent as *const x11_dl::xlib::XMotionEvent);
                 XEvent::MotionNotify(XMotionEvent {
                     type_: motion.type_,
                     serial: motion.serial as u64,
@@ -323,7 +325,8 @@ impl XEvent {
                 })
             }
             ButtonPress => {
-                let button = &*(xlib_event as *const XlibEvent as *const x11_dl::xlib::XButtonEvent);
+                let button =
+                    &*(xlib_event as *const XlibEvent as *const x11_dl::xlib::XButtonEvent);
                 XEvent::ButtonPress(XButtonEvent {
                     type_: button.type_,
                     serial: button.serial as u64,
@@ -343,7 +346,8 @@ impl XEvent {
                 })
             }
             ButtonRelease => {
-                let button = &*(xlib_event as *const XlibEvent as *const x11_dl::xlib::XButtonEvent);
+                let button =
+                    &*(xlib_event as *const XlibEvent as *const x11_dl::xlib::XButtonEvent);
                 XEvent::ButtonRelease(XButtonEvent {
                     type_: button.type_,
                     serial: button.serial as u64,
@@ -403,7 +407,8 @@ impl XEvent {
                 })
             }
             EnterNotify => {
-                let crossing = &*(xlib_event as *const XlibEvent as *const x11_dl::xlib::XCrossingEvent);
+                let crossing =
+                    &*(xlib_event as *const XlibEvent as *const x11_dl::xlib::XCrossingEvent);
                 XEvent::EnterNotify(XCrossingEvent {
                     type_: crossing.type_,
                     serial: crossing.serial as u64,
@@ -425,7 +430,8 @@ impl XEvent {
                 })
             }
             LeaveNotify => {
-                let crossing = &*(xlib_event as *const XlibEvent as *const x11_dl::xlib::XCrossingEvent);
+                let crossing =
+                    &*(xlib_event as *const XlibEvent as *const x11_dl::xlib::XCrossingEvent);
                 XEvent::LeaveNotify(XCrossingEvent {
                     type_: crossing.type_,
                     serial: crossing.serial as u64,
@@ -447,7 +453,8 @@ impl XEvent {
                 })
             }
             SelectionRequest => {
-                let sel = &*(xlib_event as *const XlibEvent as *const x11_dl::xlib::XSelectionRequestEvent);
+                let sel = &*(xlib_event as *const XlibEvent
+                    as *const x11_dl::xlib::XSelectionRequestEvent);
                 XEvent::SelectionRequest(XSelectionRequestEvent {
                     type_: sel.type_,
                     serial: sel.serial as u64,
@@ -462,7 +469,8 @@ impl XEvent {
                 })
             }
             SelectionNotify => {
-                let sel = &*(xlib_event as *const XlibEvent as *const x11_dl::xlib::XSelectionEvent);
+                let sel =
+                    &*(xlib_event as *const XlibEvent as *const x11_dl::xlib::XSelectionEvent);
                 XEvent::SelectionNotify(XSelectionEvent {
                     type_: sel.type_,
                     serial: sel.serial as u64,
@@ -476,7 +484,8 @@ impl XEvent {
                 })
             }
             SelectionClear => {
-                let sel = &*(xlib_event as *const XlibEvent as *const x11_dl::xlib::XSelectionClearEvent);
+                let sel =
+                    &*(xlib_event as *const XlibEvent as *const x11_dl::xlib::XSelectionClearEvent);
                 XEvent::SelectionClear(XSelectionClearEvent {
                     type_: sel.type_,
                     serial: sel.serial as u64,
@@ -488,7 +497,8 @@ impl XEvent {
                 })
             }
             PropertyNotify => {
-                let prop = &*(xlib_event as *const XlibEvent as *const x11_dl::xlib::XPropertyEvent);
+                let prop =
+                    &*(xlib_event as *const XlibEvent as *const x11_dl::xlib::XPropertyEvent);
                 XEvent::PropertyNotify(XPropertyEvent {
                     type_: prop.type_,
                     serial: prop.serial as u64,
@@ -501,7 +511,8 @@ impl XEvent {
                 })
             }
             ClientMessage => {
-                let msg = &*(xlib_event as *const XlibEvent as *const x11_dl::xlib::XClientMessageEvent);
+                let msg =
+                    &*(xlib_event as *const XlibEvent as *const x11_dl::xlib::XClientMessageEvent);
                 XEvent::ClientMessage(XClientMessageEvent {
                     type_: msg.type_,
                     serial: msg.serial as u64,
@@ -515,7 +526,9 @@ impl XEvent {
             _ => {
                 // Generic fallback for unhandled event types
                 log::debug!("Unhandled X11 event type: {}", type_);
-                XEvent::GenericEvent(XGenericEvent { type_: type_ as i32 })
+                XEvent::GenericEvent(XGenericEvent {
+                    type_: type_ as i32,
+                })
             }
         }
     }
@@ -601,9 +614,5 @@ pub trait EventHandler {
     ///
     /// Returns Ok(true) if event processing should stop,
     /// Ok(false) to continue processing.
-    fn handle(
-        &self,
-        event: &XEvent,
-        ctx: &mut crate::core::DpyInfo,
-    ) -> anyhow::Result<bool>;
+    fn handle(&self, event: &XEvent, ctx: &mut crate::core::DpyInfo) -> anyhow::Result<bool>;
 }

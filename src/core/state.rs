@@ -64,7 +64,9 @@ impl FakeQueue {
 
             // Update active state
             match &event {
-                FakeEvent::Key { keysym, is_press, .. } => {
+                FakeEvent::Key {
+                    keysym, is_press, ..
+                } => {
                     if *is_press {
                         self.active_keys.insert(*keysym);
                     } else {

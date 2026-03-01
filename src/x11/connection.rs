@@ -1,16 +1,16 @@
 //! X11 connection management using x11-dl
 
-use log::{info, warn, debug};
+use log::{debug, info, warn};
 
-use crate::x11::{X11Error, Window, Atom, Time, ScreenInfo};
+use crate::x11::{Atom, ScreenInfo, Time, Window, X11Error};
 use anyhow::{Context, Result};
 use std::ffi::CString;
 use std::os::raw::{c_char, c_int, c_uint};
-use std::sync::Arc;
 use std::ptr;
+use std::sync::Arc;
 
 // Import x11-dl library
-use x11_dl::xlib::{Display, XEvent as XlibEvent, Window as XlibWindow};
+use x11_dl::xlib::{Display, Window as XlibWindow, XEvent as XlibEvent};
 
 /// X11 connection wrapper
 pub struct X11Connection {
@@ -38,18 +38,14 @@ impl X11Connection {
         let display = unsafe { (xlib.XOpenDisplay)(display_name_ptr) };
 
         if display.is_null() {
-            return Err(X11Error::OpenDisplayFailed(
-                display_name.unwrap_or(":0").to_string(),
-            )
-            .into());
+            return Err(
+                X11Error::OpenDisplayFailed(display_name.unwrap_or(":0").to_string()).into(),
+            );
         }
 
         let screen = unsafe { (xlib.XDefaultScreen)(display) };
 
-        info!(
-            "Opened X display: screen={}",
-            screen,
-        );
+        info!("Opened X display: screen={}", screen,);
 
         Ok(Self {
             display,
@@ -80,9 +76,7 @@ impl X11Connection {
 
     /// Get the root window for a specific screen
     pub fn root_window_of_screen(&self, screen: i32) -> Window {
-        unsafe {
-            (self.xlib.XRootWindow)(self.display, screen) as u64
-        }
+        unsafe { (self.xlib.XRootWindow)(self.display, screen) as u64 }
     }
 
     /// Get the screen width

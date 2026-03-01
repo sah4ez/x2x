@@ -3,17 +3,19 @@
 //! This module provides safe wrappers around Xlib functions and
 //! handles low-level X11 operations.
 
+pub mod clipboard;
 pub mod connection;
+pub mod error_handler;
 pub mod event;
 pub mod extension;
-pub mod clipboard;
-pub mod error_handler;
 
+pub use clipboard::{
+    AtomCache, ClipboardData, ClipboardTarget, Selection, SelectionState, X11Clipboard,
+};
 pub use connection::X11Connection;
-pub use event::{XEvent, EventHandler};
-pub use extension::{XTestExtension, DpmsExtension};
-pub use clipboard::{X11Clipboard, Selection, ClipboardTarget, SelectionState, ClipboardData, AtomCache};
-pub use error_handler::{setup_error_handler, get_last_error, store_error, X11ErrorInfo};
+pub use error_handler::{get_last_error, setup_error_handler, store_error, X11ErrorInfo};
+pub use event::{EventHandler, XEvent};
+pub use extension::{DpmsExtension, XTestExtension};
 
 use anyhow::Result;
 

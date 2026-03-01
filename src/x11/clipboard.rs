@@ -1,32 +1,20 @@
 //! X11 Clipboard implementation for inter-display sharing
 
-use crate::x11::{X11Connection, Window, Atom, Time, X11Error};
+use crate::x11::{Atom, Time, Window, X11Connection, X11Error};
 use anyhow::{Context, Result};
-use log::{info, warn, debug, error};
+use log::{debug, error, info, warn};
 use std::collections::HashMap;
-use std::os::raw::{c_char, c_int, c_uchar, c_void};
-use std::sync::{Arc, Mutex};
 use std::ffi::CString;
+use std::os::raw::{c_char, c_int, c_uchar, c_void};
 use std::ptr;
+use std::sync::{Arc, Mutex};
 
 use x11_dl::xlib::{
-    self,
-    Display,
-    XEvent,
-    XSelectionRequestEvent,
-    XSelectionEvent,
-    XSelectionClearEvent,
-    XSelectionEvent as XSelectionEventLib,
+    self, Atom as XlibAtom, CurrentTime, Display, False, PropModeAppend, PropModeReplace,
+    Time as XlibTime, True, Window as XlibWindow, XEvent, XSelectionClearEvent,
+    XSelectionClearEvent as XSelectionClearEventLib, XSelectionEvent,
+    XSelectionEvent as XSelectionEventLib, XSelectionRequestEvent,
     XSelectionRequestEvent as XSelectionRequestEventLib,
-    XSelectionClearEvent as XSelectionClearEventLib,
-    Atom as XlibAtom,
-    Window as XlibWindow,
-    Time as XlibTime,
-    CurrentTime,
-    PropModeReplace,
-    PropModeAppend,
-    True,
-    False,
 };
 
 /// Clipboard selection types
@@ -304,11 +292,7 @@ impl X11Clipboard {
     /// * `conn` - X11 connection
     /// * `prop_window` - Window to use for property transfers
     /// * `ping_atom` - Atom to use for ping-pong synchronization
-    pub fn new(
-        conn: Arc<X11Connection>,
-        prop_window: Window,
-        ping_atom: Atom,
-    ) -> Result<Self> {
+    pub fn new(conn: Arc<X11Connection>, prop_window: Window, ping_atom: Atom) -> Result<Self> {
         // Initialize atoms
         let atoms = Self::init_atoms(&conn)?;
 
@@ -368,19 +352,11 @@ impl X11Clipboard {
     }
 
     /// Intern an atom with X server
-    unsafe fn intern_atom(
-        display: *mut Display,
-        name: &str,
-        only_if_exists: bool,
-    ) -> Result<Atom> {
+    unsafe fn intern_atom(display: *mut Display, name: &str, only_if_exists: bool) -> Result<Atom> {
         let xlib = xlib::Xlib::open().context("Failed to load xlib")?;
         let c_name = CString::new(name).context("Failed to create CString")?;
 
-        let atom = (xlib.XInternAtom)(
-            display,
-            c_name.as_ptr(),
-            if only_if_exists { 1 } else { 0 },
-        );
+        let atom = (xlib.XInternAtom)(display, c_name.as_ptr(), if only_if_exists { 1 } else { 0 });
 
         if atom == 0 {
             Err(anyhow::anyhow!("Failed to intern atom: {}", name))
@@ -402,8 +378,10 @@ impl X11Clipboard {
         event: &XSelectionRequestEvent,
         is_from_display: bool,
     ) -> Result<bool> {
-        debug!("Handling SelectionRequest: selection=0x{:x}, target=0x{:x}, requestor=0x{:x}",
-            event.selection, event.target, event.requestor);
+        debug!(
+            "Handling SelectionRequest: selection=0x{:x}, target=0x{:x}, requestor=0x{:x}",
+            event.selection, event.target, event.requestor
+        );
 
         let atoms = self.atoms.lock().unwrap();
         let mut selections = self.selections.lock().unwrap();
@@ -421,7 +399,8 @@ impl X11Clipboard {
         };
 
         // Check if we own the selection and state is ON
-        let sel_data = selections.get(&selection)
+        let sel_data = selections
+            .get(&selection)
             .ok_or_else(|| anyhow::anyhow!("Selection not found"))?;
 
         if sel_data.state != SelectionState::On {
@@ -461,8 +440,10 @@ impl X11Clipboard {
         event: &XSelectionEvent,
         is_from_display: bool,
     ) -> Result<bool> {
-        debug!("Handling SelectionNotify: selection=0x{:x}, property=0x{:x}, requestor=0x{:x}",
-            event.selection, event.property, event.requestor);
+        debug!(
+            "Handling SelectionNotify: selection=0x{:x}, property=0x{:x}, requestor=0x{:x}",
+            event.selection, event.property, event.requestor
+        );
 
         // Check if property is None (refusal)
         if event.property == 0u32 as XlibAtom {
@@ -492,7 +473,8 @@ impl X11Clipboard {
         if let Some(data_ref) = &data {
             // Update selection data
             let mut selections = self.selections.lock().unwrap();
-            let sel_data = selections.get_mut(&selection)
+            let sel_data = selections
+                .get_mut(&selection)
                 .ok_or_else(|| anyhow::anyhow!("Selection not found"))?;
 
             // Determine format from atom
@@ -502,7 +484,11 @@ impl X11Clipboard {
             sel_data.set_data(clipboard_data);
             sel_data.set_state(SelectionState::On);
 
-            info!("Updated selection data for {:?}: {} bytes", selection, data_ref.len());
+            info!(
+                "Updated selection data for {:?}: {} bytes",
+                selection,
+                data_ref.len()
+            );
         } else {
             warn!("Failed to get property data");
         }
@@ -521,8 +507,10 @@ impl X11Clipboard {
         event: &XSelectionClearEvent,
         is_from_display: bool,
     ) -> Result<bool> {
-        info!("Handling SelectionClear: selection=0x{:x}, window=0x{:x}",
-            event.selection, event.window);
+        info!(
+            "Handling SelectionClear: selection=0x{:x}, window=0x{:x}",
+            event.selection, event.window
+        );
 
         let atoms = self.atoms.lock().unwrap();
 
@@ -542,7 +530,8 @@ impl X11Clipboard {
 
         // Clear ownership and data
         let mut selections = self.selections.lock().unwrap();
-        let sel_data = selections.get_mut(&selection)
+        let sel_data = selections
+            .get_mut(&selection)
             .ok_or_else(|| anyhow::anyhow!("Selection not found"))?;
 
         sel_data.clear_owner();
@@ -604,9 +593,9 @@ impl X11Clipboard {
                 display,
                 window as XlibWindow,
                 property as XlibAtom,
-                0, // offset
+                0,           // offset
                 1024 * 1024, // 1MB max size
-                True, // delete
+                True,        // delete
                 xlib::AnyPropertyType as XlibAtom,
                 &mut actual_type,
                 &mut actual_format,
@@ -660,9 +649,11 @@ impl X11Clipboard {
 
         let atoms = self.atoms.lock().unwrap();
 
-        let selection_atom = atoms.get_selection_atom(selection)
+        let selection_atom = atoms
+            .get_selection_atom(selection)
             .ok_or_else(|| anyhow::anyhow!("Invalid selection"))?;
-        let target_atom = atoms.get_target_atom(target)
+        let target_atom = atoms
+            .get_target_atom(target)
             .ok_or_else(|| anyhow::anyhow!("Invalid target"))?;
 
         drop(atoms);
@@ -704,7 +695,8 @@ impl X11Clipboard {
 
         let atoms = self.atoms.lock().unwrap();
 
-        let selection_atom = atoms.get_selection_atom(selection)
+        let selection_atom = atoms
+            .get_selection_atom(selection)
             .ok_or_else(|| anyhow::anyhow!("Invalid selection"))?;
 
         drop(atoms);
@@ -731,17 +723,24 @@ impl X11Clipboard {
     /// Get clipboard data
     pub fn get_data(&self, selection: Selection) -> Option<Vec<u8>> {
         let selections = self.selections.lock().unwrap();
-        selections.get(&selection)
+        selections
+            .get(&selection)
             .and_then(|s| s.get_data())
             .map(|d| d.data.clone())
     }
 
     /// Set clipboard data
-    pub fn set_data(&self, selection: Selection, data: Vec<u8>, format: ClipboardTarget) -> Result<()> {
+    pub fn set_data(
+        &self,
+        selection: Selection,
+        data: Vec<u8>,
+        format: ClipboardTarget,
+    ) -> Result<()> {
         let data_len = data.len();
 
         let mut selections = self.selections.lock().unwrap();
-        let sel_data = selections.get_mut(&selection)
+        let sel_data = selections
+            .get_mut(&selection)
             .ok_or_else(|| anyhow::anyhow!("Selection not found"))?;
 
         let clipboard_data = ClipboardData::new(data, format, 0);
@@ -754,7 +753,8 @@ impl X11Clipboard {
     /// Get selection state
     pub fn get_state(&self, selection: Selection) -> SelectionState {
         let selections = self.selections.lock().unwrap();
-        selections.get(&selection)
+        selections
+            .get(&selection)
             .map(|s| s.state)
             .unwrap_or(SelectionState::Off)
     }

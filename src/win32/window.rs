@@ -48,7 +48,13 @@ impl Win32Window {
     }
 
     /// Move edge window to specified position
-    pub fn move_edge_window(&self, x: i32, y: i32, width: i32, height: i32) -> crate::win32::Result<()> {
+    pub fn move_edge_window(
+        &self,
+        x: i32,
+        y: i32,
+        width: i32,
+        height: i32,
+    ) -> crate::win32::Result<()> {
         // TODO: Implement SetWindowPos
         todo!("Implement Win32Window::move_edge_window")
     }
