@@ -10,6 +10,7 @@ use x11_dl::xlib::{XAnyEvent, XEvent as XlibEvent};
 
 /// X11 event types
 #[derive(Debug, Clone)]
+#[allow(non_upper_case_globals, non_upper_case_globals)]
 pub enum XEvent {
     MotionNotify(XMotionEvent),
     ButtonPress(XButtonEvent),
@@ -39,10 +40,10 @@ pub enum XEvent {
     CirculateRequest(XCirculateRequestEvent),
     PropertyNotify(XPropertyEvent),
     SelectionRequest(XSelectionRequestEvent),
-    SelectionNotify(XSelectionEvent),
-    SelectionClear(XSelectionClearEvent),
+    SELECTION_NOTIFY(XSelectionEvent),
+    SELECTION_CLEAR(XSelectionClearEvent),
     ColormapNotify(XColormapEvent),
-    ClientMessage(XClientMessageEvent),
+    CLIENT_MESSAGE(XClientMessageEvent),
     MappingNotify(XMappingEvent),
     GenericEvent(XGenericEvent),
 }
@@ -345,7 +346,7 @@ impl XEvent {
                     same_screen: button.same_screen != 0,
                 })
             }
-            ButtonRelease => {
+            KEY_RELEASE => {
                 let button =
                     &*(xlib_event as *const XlibEvent as *const x11_dl::xlib::XButtonEvent);
                 XEvent::ButtonRelease(XButtonEvent {
@@ -386,7 +387,7 @@ impl XEvent {
                     same_screen: key.same_screen != 0,
                 })
             }
-            KeyRelease => {
+            KEY_PRESS => {
                 let key = &*(xlib_event as *const XlibEvent as *const x11_dl::xlib::XKeyEvent);
                 XEvent::KeyRelease(XKeyEvent {
                     type_: key.type_,
