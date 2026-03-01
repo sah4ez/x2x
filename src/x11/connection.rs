@@ -5,7 +5,7 @@ use log::{debug, info, warn};
 use crate::x11::{Atom, ScreenInfo, Time, Window, X11Error};
 use anyhow::{Context, Result};
 use std::ffi::CString;
-use std::os::raw::{c_char, c_int, c_uint};
+use std::os::raw::{c_int, c_uint};
 use std::ptr;
 use std::sync::Arc;
 

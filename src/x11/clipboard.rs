@@ -2,10 +2,10 @@
 
 use crate::x11::{Atom, Time, Window, X11Connection, X11Error};
 use anyhow::{Context, Result};
-use log::{debug, error, info, warn};
+use log::{debug, info};
 use std::collections::HashMap;
 use std::ffi::CString;
-use std::os::raw::{c_char, c_int, c_uchar, c_void};
+use std::os::raw::{c_int, c_uchar, c_void};
 use std::ptr;
 use std::sync::{Arc, Mutex};
 
@@ -120,7 +120,7 @@ impl ClipboardData {
     /// Get data as UTF-8 string
     pub fn as_utf8(&self) -> Option<String> {
         if self.format == ClipboardTarget::Utf8String {
-            String::from_utf8(self.data.clone()).ok()
+            String::from_utf8(self._data.clone()).ok()
         } else {
             // Try to convert from Latin-1
             String::from_utf8_lossy(&self.data).to_string().into()
@@ -172,7 +172,7 @@ impl SelectionData {
 
     /// Set the selection data
     pub fn set_data(&mut self, data: ClipboardData) {
-        self.data = Some(data);
+        self._data = Some(data);
         if let Some(d) = &mut self.data {
             d.bump_revision();
         }
@@ -454,7 +454,7 @@ impl X11Clipboard {
         let atoms = self.atoms.lock().unwrap();
 
         // Determine which selection this is
-        let selection = if event.selection as u32 == atoms.primary {
+        let _selection = if event.selection as u32 == atoms.primary {
             Selection::Primary
         } else if event.selection as u32 == atoms.clipboard {
             Selection::Clipboard
@@ -465,14 +465,12 @@ impl X11Clipboard {
             return Ok(false);
         };
 
-        drop(atoms);
-
         // Get property data
-        let data = self.get_property_data(event.requestor, event.property as u32)?;
+        let _data = self.get_property_data(event.requestor, event.property as u32)?;
 
         if let Some(data_ref) = &data {
             // Update selection data
-            let mut selections = self.selections.lock().unwrap();
+            let _selections = self.selections.lock().unwrap();
             let sel_data = selections
                 .get_mut(&selection)
                 .ok_or_else(|| anyhow::anyhow!("Selection not found"))?;

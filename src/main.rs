@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 //! x2x-rust: Control X displays with shared keyboard/mouse
 //!
 //! This is a Rust rewrite of the original x2x utility (C implementation).
@@ -111,7 +112,7 @@ fn main() -> Result<()> {
     let from_conn_arc = std::sync::Arc::new(from_conn);
     let to_conn_arc = std::sync::Arc::new(to_conn);
 
-    let mut dpy_info = DpyInfo::new(from_conn_arc, to_conn_arc)?;
+    let dpy_info = DpyInfo::new(from_conn_arc, to_conn_arc)?;
 
     info!("Display info initialized");
 

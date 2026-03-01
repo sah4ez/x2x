@@ -84,7 +84,7 @@ impl XTestExtension {
     /// Fake a key press/release event
     ///
     /// Simulates a keyboard key press or release.
-    pub fn fake_key(&self, _conn: &X11Connection, keycode: u8, _is_press: bool) -> Result<()> {
+    pub fn fake_key(&self, _conn: &X11Connection, _keycode: u8, _is_press: bool) -> Result<()> {
         if !self.available {
             return Err(X11Error::XTestNotAvailable.into());
         }
