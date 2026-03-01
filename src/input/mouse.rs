@@ -149,7 +149,7 @@ impl MouseHandler {
         let xtest = XTestExtension::from_connection(&ctx.to_conn);
         match xtest {
             Some(ext) if ext.is_available() => {
-                ext.fake_button(&ctx.to_conn, event.button, true)?;
+                ext.fake_button(&ctx.to_conn, event.button, true, 0)?;
                 debug!("Faked button {} press", event.button);
             }
             _ => {
@@ -181,7 +181,7 @@ impl MouseHandler {
         let xtest = XTestExtension::from_connection(&ctx.to_conn);
         match xtest {
             Some(ext) if ext.is_available() => {
-                ext.fake_button(&ctx.to_conn, event.button, false)?;
+                ext.fake_button(&ctx.to_conn, event.button, false, 0)?;
                 debug!("Faked button {} release", event.button);
             }
             _ => {

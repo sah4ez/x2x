@@ -70,7 +70,7 @@ impl KeyboardHandler {
         let xtest = XTestExtension::from_connection(&ctx.to_conn);
         match xtest {
             Some(ext) if ext.is_available() => {
-                ext.fake_key(&ctx.to_conn, event.keycode as u8, true)?;
+                ext.fake_key(&ctx.to_conn, event.keycode as u8, true, 0)?;
                 debug!("Faked key press: keycode={}", event.keycode);
             }
             _ => {
@@ -112,7 +112,7 @@ impl KeyboardHandler {
         let xtest = XTestExtension::from_connection(&ctx.to_conn);
         match xtest {
             Some(ext) if ext.is_available() => {
-                ext.fake_key(&ctx.to_conn, event.keycode as u8, false)?;
+                ext.fake_key(&ctx.to_conn, event.keycode as u8, false, 0)?;
                 debug!("Faked key release: keycode={}", event.keycode);
             }
             _ => {

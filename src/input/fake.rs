@@ -60,10 +60,10 @@ impl FakeManager {
             FakeEvent::Key {
                 keycode, is_press, ..
             } => {
-                xtest.fake_key(&self.conn, *keycode, *is_press)?;
+                xtest.fake_key(&self.conn, *keycode, *is_press, 0)?;
             }
             FakeEvent::Button { button, is_press } => {
-                xtest.fake_button(&self.conn, *button, *is_press)?;
+                xtest.fake_button(&self.conn, *button, *is_press, 0)?;
             }
         }
 

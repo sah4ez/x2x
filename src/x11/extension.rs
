@@ -1,0 +1,449 @@
+//! X11 extensions - XTest and DPMS
+
+use crate::x11::{X11Connection, X11Error};
+use anyhow::{Context, Result};
+use log::{debug, error, info, warn};
+use std::sync::Arc;
+
+use x11_dl::xlib::{
+    Display,
+    CurrentTime,
+    GrabSuccess,
+    GrabModeAsync,
+    False,
+    True,
+    ButtonPressMask,
+    ButtonReleaseMask,
+    PointerMotionMask,
+};
+
+/// X Test extension for fake input events
+///
+/// This extension allows a program to simulate keyboard and mouse input
+/// on an X server. It's critical for x2x functionality.
+///
+/// This implementation uses dynamic loading of libXtst via libloading.
+/// Gracefully degrades if XTest is not available.
+pub struct XTestExtension {
+    available: bool,
+    xtest_lib: Option<Arc<libloading::Library>>,
+}
+
+/// Internal struct to hold XTest function pointers
+struct XTestFunctionPointers {
+    fake_motion_event: *const (),
+    fake_button_event: *const (),
+    fake_key_event: *const (),
+}
+
+/// Enum to represent XTest symbols availability
+enum XTestSymbols {
+    Unavailable,
+    Available(XTestFunctionPointers),
+}
+
+impl XTestExtension {
+    /// Create XTest extension handler from a connection
+    ///
+    /// Returns None if XTest extension is not available on X server.
+    /// Gracefully degrades - application can still run without XTest,
+    /// but fake input events won't work.
+    pub fn from_connection(_conn: &X11Connection) -> Option<Self> {
+        // Try to load XTest library
+        let (xtest_lib, symbols) = Self::load_xtest_library().ok()?;
+
+        // Check if we have at least some XTest functions
+        let available = match &symbols {
+            Some(XTestSymbols::Available(ref pointers)) => {
+                !pointers.fake_motion_event.is_null()
+                    || !pointers.fake_button_event.is_null()
+                    || !pointers.fake_key_event.is_null()
+            }
+            Some(_) => false,
+            None => false,
+        };
+
+        if available {
+            info!("XTest extension: available");
+            Some(Self { available, xtest_lib })
+        } else {
+            warn!("XTest extension: not available (no functions found)");
+            None
+        }
+    }
+
+    /// Load XTest library and symbols using libloading
+    fn load_xtest_library() -> Result<(Option<Arc<libloading::Library>>, XTestSymbols)> {
+        // Try to load XTest library using libloading
+        let lib = unsafe { libloading::Library::new("libXtst.so.6") }
+            .or_else(|_| unsafe { libloading::Library::new("libXtst.so") })
+            .or_else(|_| unsafe { libloading::Library::new("libXtst.so.6.4.0") });
+
+        let xtest_lib = match lib {
+            Ok(l) => Some(Arc::new(l)),
+            Err(e) => {
+                warn!("Failed to load XTest library: {}", e);
+                return Ok((None, XTestSymbols::Unavailable));
+            }
+        };
+
+        // Load XTest symbols using libloading
+        let symbols = match &xtest_lib {
+            Some(lib) => Self::load_symbols(lib),
+            None => XTestSymbols::Unavailable,
+        };
+
+        Ok((xtest_lib, symbols))
+    }
+
+    /// Load XTest symbols from library
+    fn load_symbols(lib: &libloading::Library) -> XTestSymbols {
+        unsafe {
+            let fake_motion_event = lib.get(b"XTestFakeMotionEvent\0")
+                .ok()
+                .map(|s| s.into_raw());
+
+            let fake_button_event = lib.get(b"XTestFakeButtonEvent\0")
+                .ok()
+                .map(|s| s.into_raw());
+
+            let fake_key_event = lib.get(b"XTestFakeKeyEvent\0")
+                .ok()
+                .map(|s| s.into_raw());
+
+            let pointers = XTestFunctionPointers {
+                fake_motion_event: fake_motion_event.unwrap_or(std::ptr::null()),
+                fake_button_event: fake_button_event.unwrap_or(std::ptr::null()),
+                fake_key_event: fake_key_event.unwrap_or(std::ptr::null()),
+            };
+
+            info!("XTest symbols loaded: motion={}, button={}, key={}",
+                !pointers.fake_motion_event.is_null(),
+                !pointers.fake_button_event.is_null(),
+                !pointers.fake_key_event.is_null(),
+            );
+
+            XTestSymbols::Available(pointers)
+        }
+    }
+
+    /// Check if XTest is available
+    pub fn is_available(&self) -> bool {
+        self.available
+    }
+
+    /// Fake a mouse motion event
+    ///
+    /// Moves pointer to specified screen-relative coordinates.
+    pub fn fake_motion(&self, conn: &X11Connection, _screen: i32, x: i32, y: i32) -> Result<()> {
+        if !self.available {
+            return Err(X11Error::XTestNotAvailable.into());
+        }
+
+        let xtest_lib = match &self.xtest_lib {
+            Some(l) => l,
+            None => return Err(X11Error::Generic("XTest not loaded".to_string()).into()),
+        };
+
+        let display = conn.display_ptr();
+        let xlib = conn.xlib();
+
+        unsafe {
+            // Use XTestFakeMotionEvent
+            if let Some(lib) = &self.xtest_lib {
+                if let Some(fake_motion_event) = Self::get_symbol(lib, b"XTestFakeMotionEvent\0") {
+                    type XTestFakeMotionEventFn = unsafe extern "C" fn(
+                        *mut Display,
+                        u32, i32, i32, u64,
+                    );
+                    let xtest_fn = std::mem::transmute(fake_motion_event);
+                    xtest_fn(
+                        display,
+                        0,
+                        x,
+                        y,
+                        0,
+                    );
+                    debug!("XTest: faked motion to ({}, {}) using XTestFakeMotionEvent", x, y);
+                    conn.flush()?;
+                    return Ok(());
+                }
+            }
+
+            // Fallback to XWarpPointer
+            (xlib.XWarpPointer)(
+                display,
+                0,
+                conn.root_window(),
+                0,
+                0,
+                0,
+                0,
+                x,
+                y,
+            );
+            debug!("XTest: faked motion to ({}, {}) using XWarpPointer (fallback)", x, y);
+            conn.flush()?;
+        }
+
+        Ok(())
+    }
+
+    /// Get symbol from library with caching
+    fn get_symbol(lib: &Arc<libloading::Library>, name: &[u8]) -> Option<*const ()> {
+        unsafe {
+            lib.get(name).ok().map(|s| s.into_raw())
+        }
+    }
+
+    /// Fake a button press/release event
+    ///
+    /// Simulates a mouse button press or release.
+    pub fn fake_button(&self, conn: &X11Connection, button: u32, is_press: bool, _delay: u32) -> Result<()> {
+        if !self.available {
+            return Err(X11Error::XTestNotAvailable.into());
+        }
+
+        let xtest_lib = match &self.xtest_lib {
+            Some(l) => l,
+            None => return Err(X11Error::Generic("XTest not loaded".to_string()).into()),
+        };
+
+        let display = conn.display_ptr();
+        let is_press_flag = if is_press { 1 } else { 0 };
+
+        unsafe {
+            // Use XTestFakeButtonEvent
+            if let Some(lib) = &self.xtest_lib {
+                if let Some(fake_button_event) = Self::get_symbol(lib, b"XTestFakeButtonEvent\0") {
+                    type XTestFakeButtonEventFn = unsafe extern "C" fn(
+                        *mut Display,
+                        u32, u32, c_int, u64,
+                    );
+                    let xtest_fn = std::mem::transmute(fake_button_event);
+                    xtest_fn(
+                        display,
+                        0,
+                        button,
+                        is_press_flag,
+                        0,
+                    );
+                    debug!("XTest: faked button {} {} using XTestFakeButtonEvent", button, if is_press { "press" } else { "release" });
+                    conn.flush()?;
+                    return Ok(());
+                }
+            } else {
+                return Err(X11Error::Generic("XTestFakeButtonEvent function not available".to_string()).into());
+            }
+        }
+    }
+
+    /// Fake a key press/release event
+    ///
+    /// Simulates a keyboard key press or release.
+    pub fn fake_key(&self, conn: &X11Connection, keycode: u8, is_press: bool, _delay: u32) -> Result<()> {
+        if !self.available {
+            return Err(X11Error::XTestNotAvailable.into());
+        }
+
+        let xtest_lib = match &self.xtest_lib {
+            Some(l) => l,
+            None => return Err(X11Error::Generic("XTest not loaded".to_string()).into()),
+        };
+
+        let display = conn.display_ptr();
+        let is_press_flag = if is_press { 1 } else { 0 };
+
+        unsafe {
+            // Use XTestFakeKeyEvent
+            if let Some(lib) = &self.xtest_lib {
+                if let Some(fake_key_event) = Self::get_symbol(lib, b"XTestFakeKeyEvent\0") {
+                    type XTestFakeKeyEventFn = unsafe extern "C" fn(
+                        *mut Display,
+                        u32, u32, c_int, u64,
+                    );
+                    let xtest_fn = std::mem::transmute(fake_key_event);
+                    xtest_fn(
+                        display,
+                        0,
+                        keycode as u32,
+                        is_press_flag,
+                        0,
+                    );
+                    debug!("XTest: faked key {} {} using XTestFakeKeyEvent", keycode, if is_press { "press" } else { "release" });
+                    conn.flush()?;
+                    return Ok(());
+                }
+            } else {
+                return Err(X11Error::Generic("XTestFakeKeyEvent function not available".to_string()).into());
+            }
+        }
+    }
+
+    /// Grab control of input devices
+    ///
+    /// Prevents other clients from receiving keyboard/mouse input.
+    /// This is useful when redirecting input to another display.
+    pub fn grab_control(&self, conn: &X11Connection, screen: i32) -> Result<()> {
+        if !self.available {
+            return Err(X11Error::XTestNotAvailable.into());
+        }
+
+        let display = conn.display_ptr();
+        let root_window = conn.root_window_of_screen(screen);
+
+        // Grab keyboard
+        let keyboard_result = unsafe {
+            (conn.xlib().XGrabKeyboard)(
+                display,
+                root_window,
+                False,
+                GrabModeAsync,
+                GrabModeAsync,
+                CurrentTime,
+            )
+        };
+
+        // Grab pointer
+        let pointer_result = unsafe {
+            (conn.xlib().XGrabPointer)(
+                display,
+                root_window,
+                False,
+                (ButtonPressMask | ButtonReleaseMask | PointerMotionMask) as u64,
+                GrabModeAsync,
+                GrabModeAsync,
+                0,
+                0,
+                CurrentTime,
+            )
+        };
+
+        if keyboard_result != GrabSuccess {
+            error!("Failed to grab keyboard");
+            return Err(X11Error::Generic("Failed to grab keyboard".to_string()).into());
+        }
+
+        if pointer_result != GrabSuccess {
+            error!("Failed to grab pointer");
+            // Release keyboard grab
+            unsafe {
+                (conn.xlib().XUngrabKeyboard)(display, CurrentTime);
+            }
+            return Err(X11Error::Generic("Failed to grab pointer".to_string()).into());
+        }
+
+        info!("XTest: grabbed control of input devices");
+        Ok(())
+    }
+
+    /// Release control of input devices
+    ///
+    /// Restores normal input handling.
+    pub fn release_control(&self, conn: &X11Connection, _screen: i32) -> Result<()> {
+        if !self.available {
+            return Err(X11Error::XTestNotAvailable.into());
+        }
+
+        let display = conn.display_ptr();
+
+        unsafe {
+            (conn.xlib().XUngrabKeyboard)(display, CurrentTime);
+            (conn.xlib().XUngrabPointer)(display, CurrentTime);
+            conn.flush()?;
+        }
+
+        info!("XTest: released control of input devices");
+        Ok(())
+    }
+}
+
+/// DPMS extension for display power management
+///
+/// This extension provides control over power saving features of X displays.
+/// Gracefully degrades - application can still run without DPMS.
+///
+/// Note: This is a simplified stub implementation.
+/// A production version would properly load DPMS extension.
+pub struct DpmsExtension {
+    available: bool,
+}
+
+impl DpmsExtension {
+    /// Create DPMS extension handler from a connection
+    ///
+    /// Returns None if DPMS extension is not available on X server.
+    pub fn from_connection(_conn: &X11Connection) -> Option<Self> {
+        // For now, assume DPMS is not available
+        // A proper implementation would query X server for DPMS extension
+        debug!("DPMS extension: not yet implemented");
+        Some(Self { available: false })
+    }
+
+    /// Check if DPMS is available
+    pub fn is_available(&self) -> bool {
+        self.available
+    }
+
+    /// Check if DPMS is enabled
+    pub fn is_enabled(&self, _conn: &X11Connection) -> Result<bool> {
+        Ok(false)
+    }
+
+    /// Enable or disable DPMS
+    pub fn set_enabled(&self, _conn: &X11Connection, _enable: bool) -> Result<()> {
+        warn!("DPMS: set_enabled not yet implemented");
+        Ok(())
+    }
+
+    /// Force DPMS to a specific level
+    ///
+    /// Immediately puts display into specified power state.
+    pub fn force_level(&self, _conn: &X11Connection, _level: DpmsLevel) -> Result<()> {
+        warn!("DPMS: force_level not yet implemented");
+        Ok(())
+    }
+
+    /// Get current DPMS level
+    pub fn get_level(&self, _conn: &X11Connection) -> Result<Option<DpmsLevel>> {
+        Ok(None)
+    }
+}
+
+/// DPMS power levels
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DpmsLevel {
+    Normal = 0,
+    Standby = 1,
+    Suspend = 2,
+    Off = 3,
+}
+
+impl DpmsLevel {
+    pub fn from_u16(value: u16) -> Option<Self> {
+        match value {
+            0 => Some(Self::Normal),
+            1 => Some(Self::Standby),
+            2 => Some(Self::Suspend),
+            3 => Some(Self::Off),
+            _ => None,
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_dpms_level_conversion() {
+        assert_eq!(DpmsLevel::from_u16(0), Some(DpmsLevel::Normal));
+        assert_eq!(DpmsLevel::from_u16(1), Some(DpmsLevel::Standby));
+        assert_eq!(DpmsLevel::from_u16(2), Some(DpmsLevel::Suspend));
+        assert_eq!(DpmsLevel::from_u16(3), Some(DpmsLevel::Off));
+        assert_eq!(DpmsLevel::from_u16(255), None);
+
+        assert_eq!(DpmsLevel::Normal as u16, 0);
+        assert_eq!(DpmsLevel::Off as u16, 3);
+    }
+}
