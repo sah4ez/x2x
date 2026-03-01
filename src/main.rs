@@ -16,16 +16,12 @@
 //! - **input**: Input event handling (mouse, keyboard, fake event queue)
 //! - **clipboard**: Clipboard sharing via X Selection mechanism
 //! - **utils**: Error handling, configuration, and utilities
-//! - **win32**: Windows/Cygwin support (optional, behind `win32` feature)
 
 mod x11;
 mod core;
 mod input;
 mod clipboard;
 mod utils;
-
-#[cfg(feature = "win32")]
-mod win32;
 
 use anyhow::{Context, Result};
 use clap::Parser;

@@ -13,7 +13,6 @@ categories = ["command-line-utilities", "os::unix-apis"]
 [features]
 default = ["x11"]
 x11 = []
-win32 = ["x11", "dep:windows"]
 
 [dependencies]
 # X11 dependencies
